@@ -2,11 +2,13 @@ package com.auth.auth_app.service.impl;
 
 import com.auth.auth_app.Exception.Oauth2MissingEmailException;
 import com.auth.auth_app.entity.AuthUser;
+import com.auth.auth_app.entity.LinkedAccounts;
 import com.auth.auth_app.entity.ProviderType;
 import com.auth.auth_app.model.AuthUserDto;
 import com.auth.auth_app.model.LoginRequest;
 import com.auth.auth_app.model.OAuth2UserInfo;
 import com.auth.auth_app.repository.AuthUserRepository;
+import com.auth.auth_app.repository.LinkedAccountsRepository;
 import com.auth.auth_app.service.IAuthService;
 import com.auth.auth_app.service.ICloudinaryService;
 import com.auth.auth_app.util.AuthUtil;
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -36,6 +39,7 @@ public class AuthServiceImp implements IAuthService {
     private final ICloudinaryService cloudinaryService;
     private final PasswordEncoder passwordEncoder;
     private final AuthUserRepository authUserRepository;
+    private final LinkedAccountsRepository linkedAccountsRepository;
     private final List<IOAuth2UserInfoExtractor> extractors;
     private final AuthUtil authUtil;
 
@@ -69,7 +73,7 @@ public class AuthServiceImp implements IAuthService {
 
     @Override
     @Transactional
-    public void registerUser(OAuth2UserInfo oAuth2UserInfo, ProviderType providerType) throws IOException {
+    public AuthUser registerUser(OAuth2UserInfo oAuth2UserInfo, ProviderType providerType) throws IOException {
         String imageUrl = null;
         if (oAuth2UserInfo.avatarUrl() != null){
             Map data = cloudinaryService.upload(oAuth2UserInfo.avatarUrl());
@@ -81,18 +85,20 @@ public class AuthServiceImp implements IAuthService {
                 .password(null)
                 .name(oAuth2UserInfo.name())
                 .image(imageUrl)
+                .linkedAccounts(new ArrayList<>())
                 .build();
+
+        newUser = authUserRepository.save(newUser);
 
         authUtil.linkNewProvider(newUser, oAuth2UserInfo.providerId(),  providerType);
 
-        authUserRepository.save(newUser);
+        return newUser;
     }
 
     @Override
     @Transactional
-    public void handleOAuth2LoginRequest(OAuth2User user, String registrationId) throws IOException, Oauth2MissingEmailException {
+    public String handleOAuth2LoginRequest(OAuth2User user, String registrationId) throws IOException, Oauth2MissingEmailException {
         ProviderType providerType = authUtil.getProviderFromRegistrationId(registrationId);
-        String providerId = authUtil.determineProviderIdFromOAuth2User(user,registrationId);
 
         OAuth2UserInfo userInfo = extractors.stream()
             .filter(extractor -> extractor.supports(providerType.toString()))
@@ -100,12 +106,11 @@ public class AuthServiceImp implements IAuthService {
             .orElseThrow(()-> new OAuth2AuthenticationException(("Sorry! Login with " + providerType + " is not supported yet.")))
             .extractUserInfo(user.getAttributes());
 
-        AuthUser existingLinkedUser = authUserRepository.findByProviderIdAndProviderType(providerId, providerType)
-                .orElse(null);
+        LinkedAccounts linkedAccounts = linkedAccountsRepository.findByProviderIdAndProviderType(userInfo.providerId(), providerType).orElse(null);
 
-        if (existingLinkedUser!=null){
-//            TODO: Generate JWT for existingLinkedUser and return/redirect.
-            return;
+        if (linkedAccounts!=null){
+            AuthUser existingLinkedUser = linkedAccounts.getAuthUser();
+            return authUtil.generateJWTToken(existingLinkedUser);
         }
 
         if (userInfo.email()==null || userInfo.email().isBlank()){
@@ -117,10 +122,10 @@ public class AuthServiceImp implements IAuthService {
 
         if (emailAuthUser!=null){
             authUtil.linkNewProvider(emailAuthUser,userInfo.providerId(),providerType);
-//            TODO: Generate JWT for existingLinkedUser and return/redirect.
-        }else{
-            registerUser(userInfo,providerType);
+            return authUtil.generateJWTToken(emailAuthUser);
         }
+        AuthUser authUser = registerUser(userInfo,providerType);
+        return authUtil.generateJWTToken(authUser);
 
     }
 }

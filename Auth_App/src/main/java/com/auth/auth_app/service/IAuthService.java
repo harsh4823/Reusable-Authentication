@@ -1,6 +1,7 @@
 package com.auth.auth_app.service;
 
 import com.auth.auth_app.Exception.Oauth2MissingEmailException;
+import com.auth.auth_app.entity.AuthUser;
 import com.auth.auth_app.entity.ProviderType;
 import com.auth.auth_app.model.AuthUserDto;
 import com.auth.auth_app.model.LoginRequest;
@@ -16,7 +17,7 @@ public interface IAuthService {
 
     void registerUser(AuthUserDto authUserDto, MultipartFile profilePicture) throws IOException;
 
-    void registerUser(OAuth2UserInfo oAuth2UserInfo, ProviderType providerType) throws IOException;
+    AuthUser registerUser(OAuth2UserInfo oAuth2UserInfo, ProviderType providerType) throws IOException;
 
-    void handleOAuth2LoginRequest(OAuth2User user, String registrationId) throws IOException, Oauth2MissingEmailException;
+    String handleOAuth2LoginRequest(OAuth2User user, String registrationId) throws IOException, Oauth2MissingEmailException;
 }

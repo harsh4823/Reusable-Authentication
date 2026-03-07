@@ -18,7 +18,7 @@ public class AuthUser {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(unique = true, nullable = false,name = "user_id")
-    private UUID userId;
+    private Long userId;
 
     @Email
     @Column(unique = true)

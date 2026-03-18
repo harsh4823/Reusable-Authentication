@@ -16,7 +16,7 @@ import java.util.*;
 @Table(name = "users")
 public class AuthUser {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(unique = true, nullable = false,name = "user_id")
     private Long userId;
 

@@ -49,9 +49,10 @@ public class AuthUserController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> apiLogin(@RequestBody LoginRequest loginRequest){
         try{
-        String jwt = authService.authenticateAndGenerateToken(loginRequest);
-        return ResponseEntity.status(HttpStatus.OK).header(ApplicationConstant.JWT_HEADER,jwt)
-                .body(new LoginResponse(HttpStatus.OK.getReasonPhrase(),jwt));
+        LoginResponse loginResponse = authService.authenticateAndGenerateToken(loginRequest);
+
+        return ResponseEntity.status(HttpStatus.OK).header(ApplicationConstant.JWT_HEADER,loginResponse.jwtToken())
+                .body(loginResponse);
         }catch (Exception e){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -75,7 +76,7 @@ public class AuthUserController {
         String refreshTokenString = null;
         if (request.getCookies() != null) {
             refreshTokenString = Arrays.stream(request.getCookies())
-                    .filter(cookie -> "refresh_jwt".equals(cookie.getName()))
+                    .filter(cookie -> "refreshToken".equals(cookie.getName()))
                     .map(Cookie::getValue)
                     .findFirst()
                     .orElse(null);

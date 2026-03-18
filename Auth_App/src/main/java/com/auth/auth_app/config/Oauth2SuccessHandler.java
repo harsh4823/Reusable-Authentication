@@ -1,6 +1,7 @@
 package com.auth.auth_app.config;
 
 import com.auth.auth_app.Exception.Oauth2MissingEmailException;
+import com.auth.auth_app.model.LoginResponse;
 import com.auth.auth_app.service.IAuthService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -30,13 +31,22 @@ public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
         String registrationId = token.getAuthorizedClientRegistrationId();
 
         try {
-            String jwt = authService.handleOAuth2LoginRequest(user,registrationId);
+            LoginResponse loginResponse = authService.handleOAuth2LoginRequest(user,registrationId);
+            String jwt = loginResponse.jwtToken();
             Cookie jwtCookie = new Cookie("jwt", jwt);
             jwtCookie.setHttpOnly(true);     // Prevents JavaScript (XSS) from reading the token
             jwtCookie.setSecure(false);      // Set to true in production when using HTTPS
             jwtCookie.setPath("/");          // Available to all API endpoints
-            jwtCookie.setMaxAge(30000);      // Expiration in seconds (align with JWT expiration)
+            jwtCookie.setMaxAge(900);      // Expiration in seconds (align with JWT expiration)
             response.addCookie(jwtCookie);
+
+            String refreshToken = loginResponse.refreshToken();
+            Cookie refreshCookie = new Cookie("refreshToken",refreshToken);
+            jwtCookie.setHttpOnly(true);     // Prevents JavaScript (XSS) from reading the token
+            jwtCookie.setSecure(false);      // Set to true in production when using HTTPS
+            jwtCookie.setPath("/");          // Available to all API endpoints
+            jwtCookie.setMaxAge(24*7*60*60);      // Expiration in seconds (align with JWT expiration)
+            response.addCookie(refreshCookie);
 
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType("application/json");

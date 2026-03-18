@@ -9,7 +9,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.sql.Ref;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,8 +25,6 @@ public class RefreshTokenServiceImp implements IRefreshTokenService {
     public RefreshToken createRefreshToken(Long userId) {
         AuthUser authUser = authUserRepository.findById(userId)
                 .orElseThrow(()->new RuntimeException("User not found"));
-
-        refreshTokenRepository.deleteByAuthUser_UserId(userId);
 
         long REFRESH_TOKEN_EXPIRATION_MS = 604800000L;
         RefreshToken refreshToken = RefreshToken.builder()

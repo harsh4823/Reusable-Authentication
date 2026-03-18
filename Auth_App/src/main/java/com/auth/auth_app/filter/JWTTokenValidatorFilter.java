@@ -29,7 +29,8 @@ public class JWTTokenValidatorFilter extends OncePerRequestFilter {
             "/login",
             "/auth/login",
             "/auth/register",
-            "/user"
+            "/user",
+            "/auth/refresh"
     );
 
     @Override

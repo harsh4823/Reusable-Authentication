@@ -32,7 +32,7 @@ public class SecurityConfig {
         CsrfTokenRequestAttributeHandler csrfTokenRequestAttributeHandler = new CsrfTokenRequestAttributeHandler();
         return httpSecurity
                 .authorizeHttpRequests(req -> req
-                        .requestMatchers("/login","/auth/login","/auth/register").permitAll()
+                        .requestMatchers("/login","/auth/login","/auth/register","/auth/refresh").permitAll()
                         .anyRequest().authenticated())
                 .formLogin(Customizer.withDefaults())
                 .httpBasic(hbc -> hbc.authenticationEntryPoint(new CustomAuthenticationEntryPoint()))
@@ -57,7 +57,7 @@ public class SecurityConfig {
                 }))
                 .csrf(csrfConfig -> csrfConfig
                         .csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
-                        .ignoringRequestMatchers("/login","/auth/login","/auth/register")
+                        .ignoringRequestMatchers("/login","/auth/login","/auth/refresh")
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .addFilterAfter(new CsrfTokenFilter(), BasicAuthenticationFilter.class)
                 .addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class)

@@ -36,7 +36,7 @@ public class AuthUtil {
                         GrantedAuthority::getAuthority
                 ).collect(Collectors.joining(",")))
                 .issuedAt(new Date())
-                .expiration(new Date(new Date().getTime() + 30000000))
+                .expiration(new Date(new Date().getTime() + 90000))
                 .signWith(secretKey).compact();
     }
 
@@ -49,7 +49,7 @@ public class AuthUtil {
                 .claim("email",authUser.getEmail())
                 .claim("authorities", "ROLE_USER")
                 .issuedAt(new Date())
-                .expiration(new Date(new Date().getTime() + 30000000))
+                .expiration(new Date(new Date().getTime() + 90000))
                 .signWith(secretKey)
                 .compact();
     }

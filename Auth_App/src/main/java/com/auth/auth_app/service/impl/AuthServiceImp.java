@@ -4,17 +4,21 @@ import com.auth.auth_app.Exception.Oauth2MissingEmailException;
 import com.auth.auth_app.entity.AuthUser;
 import com.auth.auth_app.entity.LinkedAccounts;
 import com.auth.auth_app.entity.ProviderType;
+import com.auth.auth_app.entity.RefreshToken;
 import com.auth.auth_app.model.AuthUserDto;
 import com.auth.auth_app.model.LoginRequest;
+import com.auth.auth_app.model.LoginResponse;
 import com.auth.auth_app.model.OAuth2UserInfo;
 import com.auth.auth_app.repository.AuthUserRepository;
 import com.auth.auth_app.repository.LinkedAccountsRepository;
 import com.auth.auth_app.service.IAuthService;
 import com.auth.auth_app.service.ICloudinaryService;
+import com.auth.auth_app.service.IRefreshTokenService;
 import com.auth.auth_app.util.AuthUtil;
 import com.auth.auth_app.util.IOAuth2UserInfoExtractor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -42,17 +46,26 @@ public class AuthServiceImp implements IAuthService {
     private final LinkedAccountsRepository linkedAccountsRepository;
     private final List<IOAuth2UserInfoExtractor> extractors;
     private final AuthUtil authUtil;
+    private final IRefreshTokenService refreshTokenService;
 
     @Override
-    public String authenticateAndGenerateToken(LoginRequest loginRequest) {
+    public LoginResponse authenticateAndGenerateToken(LoginRequest loginRequest) {
         String jwt = "";
         Authentication authentication = UsernamePasswordAuthenticationToken.unauthenticated(loginRequest.email(),loginRequest.password());
         Authentication authenticate = authenticationManager.authenticate(authentication);
 
+        AuthUser authUser = authUserRepository.findByEmail(loginRequest.email()).orElse(null);
+
+        String refreshToken = null;
+
+        if (authUser!=null){
+            refreshToken = refreshTokenService.createRefreshToken(authUser.getUserId()).getToken();
+        }
+
         if (authentication!=null && authenticate.isAuthenticated()){
             jwt = authUtil.generateJWTToken(authenticate);
         }
-        return jwt;
+        return new LoginResponse(HttpStatus.OK.getReasonPhrase(),jwt, refreshToken);
     }
 
     @Override
@@ -97,7 +110,7 @@ public class AuthServiceImp implements IAuthService {
 
     @Override
     @Transactional
-    public String handleOAuth2LoginRequest(OAuth2User user, String registrationId) throws IOException, Oauth2MissingEmailException {
+    public LoginResponse handleOAuth2LoginRequest(OAuth2User user, String registrationId) throws IOException, Oauth2MissingEmailException {
         ProviderType providerType = authUtil.getProviderFromRegistrationId(registrationId);
 
         OAuth2UserInfo userInfo = extractors.stream()
@@ -110,7 +123,11 @@ public class AuthServiceImp implements IAuthService {
 
         if (linkedAccounts!=null){
             AuthUser existingLinkedUser = linkedAccounts.getAuthUser();
-            return authUtil.generateJWTToken(existingLinkedUser);
+            return new LoginResponse(
+                    HttpStatus.OK.getReasonPhrase(),
+                    authUtil.generateJWTToken(existingLinkedUser),
+                    refreshTokenService.createRefreshToken(existingLinkedUser.getUserId()).getToken()
+            );
         }
 
         if (userInfo.email()==null || userInfo.email().isBlank()){
@@ -122,10 +139,18 @@ public class AuthServiceImp implements IAuthService {
 
         if (emailAuthUser!=null){
             authUtil.linkNewProvider(emailAuthUser,userInfo.providerId(),providerType);
-            return authUtil.generateJWTToken(emailAuthUser);
+            return new LoginResponse(
+                    HttpStatus.OK.getReasonPhrase(),
+                    authUtil.generateJWTToken(emailAuthUser),
+                    refreshTokenService.createRefreshToken(emailAuthUser.getUserId()).getToken()
+            );
         }
         AuthUser authUser = registerUser(userInfo,providerType);
-        return authUtil.generateJWTToken(authUser);
+        return new LoginResponse(
+                HttpStatus.OK.getReasonPhrase(),
+                authUtil.generateJWTToken(authUser),
+                refreshTokenService.createRefreshToken(authUser.getUserId()).getToken()
+        );
 
     }
 }

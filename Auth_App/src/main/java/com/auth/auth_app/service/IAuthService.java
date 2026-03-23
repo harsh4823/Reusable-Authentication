@@ -21,4 +21,8 @@ public interface IAuthService {
     AuthUser registerUser(OAuth2UserInfo oAuth2UserInfo, ProviderType providerType) throws IOException;
 
     LoginResponse handleOAuth2LoginRequest(OAuth2User user, String registrationId) throws IOException, Oauth2MissingEmailException;
+
+    void logoutFromSingleDevice(Long userId,String jwt,String refreshToken);
+
+    void logoutFromAllDevices(Long userId);
 }

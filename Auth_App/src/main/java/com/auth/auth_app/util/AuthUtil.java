@@ -8,6 +8,9 @@ import com.auth.auth_app.entity.Role;
 import com.auth.auth_app.repository.LinkedAccountsRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.stream.Collectors;
 
@@ -36,7 +40,7 @@ public class AuthUtil {
                         GrantedAuthority::getAuthority
                 ).collect(Collectors.joining(",")))
                 .issuedAt(new Date())
-                .expiration(new Date(new Date().getTime() + 90000))
+                .expiration(new Date(System.currentTimeMillis() +  900000 ))
                 .signWith(secretKey).compact();
     }
 
@@ -49,7 +53,7 @@ public class AuthUtil {
                 .claim("email",authUser.getEmail())
                 .claim("authorities", "ROLE_USER")
                 .issuedAt(new Date())
-                .expiration(new Date(new Date().getTime() + 90000))
+                .expiration(new Date(System.currentTimeMillis() +  900000 ))
                 .signWith(secretKey)
                 .compact();
     }
@@ -81,8 +85,50 @@ public class AuthUtil {
         newLink.setProviderId(providerId);
         newLink.setProviderType(providerType);
         newLink.setAuthUser(existingUser);
-        existingUser.getLinkedAccounts().add(newLink); // Assuming bidirectional helper method
+        existingUser.getLinkedAccounts().add(newLink);
         linkedAccountsRepository.save(newLink);
+    }
+
+    public String extractJwt(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        } else if (bearerToken != null) {
+            return bearerToken;
+        }
+        return extractCookie(request, "jwt");
+    }
+
+    public String extractRefreshToken(HttpServletRequest request) {
+        String refreshHeader = request.getHeader("Refresh-Token");
+        if (refreshHeader != null) {
+            return refreshHeader;
+        }
+        return extractCookie(request, "refreshToken");
+    }
+
+    public String extractCookie(HttpServletRequest request, String cookieName) {
+        if (request.getCookies() == null) return null;
+        return Arrays.stream(request.getCookies())
+                .filter(c -> c.getName().equals(cookieName))
+                .map(Cookie::getValue)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public void clearBrowserCookies(HttpServletResponse response) {
+        Cookie clearJwtCookie = new Cookie("jwt", null);
+        clearJwtCookie.setPath("/");
+        clearJwtCookie.setHttpOnly(true);
+        clearJwtCookie.setMaxAge(0);
+
+        Cookie clearRefreshCookie = new Cookie("refreshToken", null);
+        clearRefreshCookie.setPath("/api/auth/refresh");
+        clearRefreshCookie.setHttpOnly(true);
+        clearRefreshCookie.setMaxAge(0);
+
+        response.addCookie(clearJwtCookie);
+        response.addCookie(clearRefreshCookie);
     }
 
 }

@@ -9,6 +9,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -43,13 +44,13 @@ public class JWTTokenGeneratorFilter extends OncePerRequestFilter {
             Environment env = getEnvironment();
             if (env!=null){
                 String jwt = authUtil.generateJWTToken(authentication);
-                response.setHeader(ApplicationConstant.JWT_HEADER,jwt);
+                response.setHeader(ApplicationConstant.JWT_HEADER,"Bearer " + jwt);
 
                 Cookie jwtCookie = new Cookie("jwt", jwt);
                 jwtCookie.setHttpOnly(true);     // Prevents JavaScript (XSS) from reading the token
                 jwtCookie.setSecure(false);      // Set to true in production when using HTTPS
                 jwtCookie.setPath("/");          // Available to all API endpoints
-                jwtCookie.setMaxAge(30000);      // Expiration in seconds (align with JWT expiration)
+                jwtCookie.setMaxAge(900);      // Expiration in seconds (align with JWT expiration)
                 response.addCookie(jwtCookie);
             }
         }

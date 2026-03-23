@@ -4,13 +4,13 @@ import com.auth.auth_app.Exception.Oauth2MissingEmailException;
 import com.auth.auth_app.entity.AuthUser;
 import com.auth.auth_app.entity.LinkedAccounts;
 import com.auth.auth_app.entity.ProviderType;
-import com.auth.auth_app.entity.RefreshToken;
 import com.auth.auth_app.model.AuthUserDto;
 import com.auth.auth_app.model.LoginRequest;
 import com.auth.auth_app.model.LoginResponse;
 import com.auth.auth_app.model.OAuth2UserInfo;
 import com.auth.auth_app.repository.AuthUserRepository;
 import com.auth.auth_app.repository.LinkedAccountsRepository;
+import com.auth.auth_app.repository.TokenRepository;
 import com.auth.auth_app.service.IAuthService;
 import com.auth.auth_app.service.ICloudinaryService;
 import com.auth.auth_app.service.IRefreshTokenService;
@@ -47,6 +47,7 @@ public class AuthServiceImp implements IAuthService {
     private final List<IOAuth2UserInfoExtractor> extractors;
     private final AuthUtil authUtil;
     private final IRefreshTokenService refreshTokenService;
+    private final TokenRepository tokenRepository;
 
     @Override
     public LoginResponse authenticateAndGenerateToken(LoginRequest loginRequest) {
@@ -65,6 +66,11 @@ public class AuthServiceImp implements IAuthService {
         if (authentication!=null && authenticate.isAuthenticated()){
             jwt = authUtil.generateJWTToken(authenticate);
         }
+
+        if (authUser!=null){
+            tokenRepository.storeTokens(authUser.getUserId(),jwt,refreshToken);
+        }
+
         return new LoginResponse(HttpStatus.OK.getReasonPhrase(),jwt, refreshToken);
     }
 
@@ -123,11 +129,7 @@ public class AuthServiceImp implements IAuthService {
 
         if (linkedAccounts!=null){
             AuthUser existingLinkedUser = linkedAccounts.getAuthUser();
-            return new LoginResponse(
-                    HttpStatus.OK.getReasonPhrase(),
-                    authUtil.generateJWTToken(existingLinkedUser),
-                    refreshTokenService.createRefreshToken(existingLinkedUser.getUserId()).getToken()
-            );
+            return generateAndStoreTokens(existingLinkedUser);
         }
 
         if (userInfo.email()==null || userInfo.email().isBlank()){
@@ -139,18 +141,26 @@ public class AuthServiceImp implements IAuthService {
 
         if (emailAuthUser!=null){
             authUtil.linkNewProvider(emailAuthUser,userInfo.providerId(),providerType);
-            return new LoginResponse(
-                    HttpStatus.OK.getReasonPhrase(),
-                    authUtil.generateJWTToken(emailAuthUser),
-                    refreshTokenService.createRefreshToken(emailAuthUser.getUserId()).getToken()
-            );
+            return generateAndStoreTokens(emailAuthUser);
         }
         AuthUser authUser = registerUser(userInfo,providerType);
-        return new LoginResponse(
-                HttpStatus.OK.getReasonPhrase(),
-                authUtil.generateJWTToken(authUser),
-                refreshTokenService.createRefreshToken(authUser.getUserId()).getToken()
-        );
+        return generateAndStoreTokens(authUser);
+    }
 
+    @Override
+    public void logoutFromAllDevices(Long userId){
+        tokenRepository.removeAllTokens(userId);
+    }
+
+    @Override
+    public void logoutFromSingleDevice(Long userId,String jwt,String refreshToken){
+        tokenRepository.removeSingleSession(userId,jwt,refreshToken);
+    }
+
+    private LoginResponse generateAndStoreTokens(AuthUser user) {
+        String jwt = authUtil.generateJWTToken(user);
+        String refreshToken = refreshTokenService.createRefreshToken(user.getUserId()).getToken();
+        tokenRepository.storeTokens(user.getUserId(), jwt, refreshToken);
+        return new LoginResponse(HttpStatus.OK.getReasonPhrase(), jwt, refreshToken);
     }
 }

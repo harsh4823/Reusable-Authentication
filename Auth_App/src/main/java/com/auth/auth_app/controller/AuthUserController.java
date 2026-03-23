@@ -7,6 +7,7 @@ import com.auth.auth_app.model.AuthUserDto;
 import com.auth.auth_app.model.LoginRequest;
 import com.auth.auth_app.model.LoginResponse;
 import com.auth.auth_app.repository.AuthUserRepository;
+import com.auth.auth_app.repository.TokenRepository;
 import com.auth.auth_app.service.IAuthService;
 import com.auth.auth_app.service.ICloudinaryService;
 import com.auth.auth_app.service.IRefreshTokenService;
@@ -26,6 +27,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,6 +48,8 @@ public class AuthUserController {
     private final IAuthService authService;
     private final IRefreshTokenService refreshTokenService;
     private final AuthUtil authUtil;
+    private final TokenRepository tokenRepository;
+    private final AuthUserRepository authUserRepository;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> apiLogin(@RequestBody LoginRequest loginRequest){
@@ -72,29 +77,25 @@ public class AuthUserController {
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
-        // 1. Extract the refresh token from the incoming cookies
-        String refreshTokenString = null;
-        if (request.getCookies() != null) {
-            refreshTokenString = Arrays.stream(request.getCookies())
-                    .filter(cookie -> "refreshToken".equals(cookie.getName()))
-                    .map(Cookie::getValue)
-                    .findFirst()
-                    .orElse(null);
-        }
+        String refreshTokenString = authUtil.extractRefreshToken(request);
 
         if (refreshTokenString == null) {
-            return ResponseEntity.status(403).body("Refresh Token is missing!");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Refresh Token is missing!");
         }
 
-        // 2. Validate the token and issue a new Access Token
+        if (tokenRepository.isRefreshTokenBlacklisted(refreshTokenString)){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Refresh Token hs been revoked!");
+        }
+
         return refreshTokenService.findByToken(refreshTokenString)
                 .map(refreshTokenService::verifyRefreshToken)
                 .map(RefreshToken::getAuthUser)
                 .map(authUser -> {
-                    // Generate the brand new short-lived JWT
+
                     String newAccessToken = authUtil.generateJWTToken(authUser);
 
-                    // Attach the new Access Token to the response
+                    tokenRepository.storeTokens(authUser.getUserId(),newAccessToken,refreshTokenString);
+
                     Cookie jwtCookie = new Cookie("jwt", newAccessToken);
                     jwtCookie.setHttpOnly(true);
                     jwtCookie.setPath("/");
@@ -105,6 +106,39 @@ public class AuthUserController {
                 })
                 .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
     }
+
+    @PostMapping("/logout/single")
+    public ResponseEntity<?> logoutFromSingleDevice(HttpServletRequest request, HttpServletResponse response) {
+        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        AuthUser authUser = authUserRepository.findByEmail(email).orElse(null);
+
+        if (authUser != null) {
+            String jwt = authUtil.extractJwt(request);
+            String refreshToken = authUtil.extractRefreshToken(request);
+
+            authService.logoutFromSingleDevice(authUser.getUserId(), jwt, refreshToken);
+
+            authUtil.clearBrowserCookies(response);
+            return ResponseEntity.status(HttpStatus.OK).body("Logout successful");
+        }
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Logout failed");
+    }
+
+    @PostMapping("/logout/all")
+    public ResponseEntity<?> logoutFromAllDevices(HttpServletResponse response) {
+        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        AuthUser authUser = authUserRepository.findByEmail(email).orElse(null);
+
+        if (authUser != null) {
+            authService.logoutFromAllDevices(authUser.getUserId());
+            authUtil.clearBrowserCookies(response);
+            return ResponseEntity.status(HttpStatus.OK).body("Logout successful from all devices");
+        }
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Logout failed");
+    }
+
 
     @GetMapping("/hello")
     public String hello(){

@@ -1,6 +1,8 @@
 package com.auth.auth_app.filter;
 
 import com.auth.auth_app.constant.ApplicationConstant;
+import com.auth.auth_app.repository.TokenRepository;
+import com.auth.auth_app.util.AuthUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -9,12 +11,15 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.crypto.SecretKey;
@@ -23,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
+@Component
 public class JWTTokenValidatorFilter extends OncePerRequestFilter {
 
     private static final List<String> EXCLUDED_PATHS = Arrays.asList(
@@ -33,19 +39,22 @@ public class JWTTokenValidatorFilter extends OncePerRequestFilter {
             "/auth/refresh"
     );
 
+    @Autowired
+    private TokenRepository tokenRepository;
+
+    @Autowired
+    private AuthUtil authUtil;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String jwt = request.getHeader(ApplicationConstant.JWT_HEADER);
-
-        if (jwt == null && request.getCookies()!=null){
-            for(Cookie cookie: request.getCookies()){
-                if ("jwt".equals(cookie.getName())) {
-                    jwt = cookie.getValue();
-                    break;
-                }
-            }
-        }
+        String jwt = authUtil.extractJwt(request);
         if (jwt!=null){
+            if (tokenRepository.isAccessTokenBlacklisted(jwt)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Session has been terminated. Please log in again.");
+                return;
+            }
+
             try {
                 Environment env = getEnvironment();
                 if (env!=null) {
@@ -62,6 +71,10 @@ public class JWTTokenValidatorFilter extends OncePerRequestFilter {
                     }
                 }
             } catch (Exception e) {
+                // ADD THIS LINE to print the true cause to your terminal
+                System.out.println("JWT PARSING FAILED BECAUSE: " + e.getMessage());
+                e.printStackTrace();
+
                 throw new BadCredentialsException("Invalid Token received");
             }
         }

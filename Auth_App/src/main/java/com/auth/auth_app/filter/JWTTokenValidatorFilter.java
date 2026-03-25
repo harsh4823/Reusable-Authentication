@@ -25,6 +25,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.List;
 
@@ -55,20 +56,20 @@ public class JWTTokenValidatorFilter extends OncePerRequestFilter {
                 return;
             }
 
-            try {
-                Environment env = getEnvironment();
-                if (env!=null) {
-                    String secret = env.getProperty(ApplicationConstant.JWT_SECRET, ApplicationConstant.JWT_SECRET_DEFAULT_VALUE);
-                    SecretKey secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-                    if (secretKey!=null){
-                        Claims claims = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(jwt).getPayload();
-                        String email = claims.get("email",String.class);
-                        String authorities = claims.get("authorities",String.class);
+        try {
+            PublicKey publicKey = authUtil.getPublicKey();
+                if (publicKey!=null){
+                    Claims claims = Jwts.parser()
+                            .verifyWith(publicKey)
+                            .build()
+                            .parseSignedClaims(jwt)
+                            .getPayload();
+                    String email = claims.get("email",String.class);
+                    String authorities = claims.get("authorities",String.class);
 
-                        Authentication authentication = new UsernamePasswordAuthenticationToken(email, null,
-                                AuthorityUtils.commaSeparatedStringToAuthorityList(authorities));
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
-                    }
+                    Authentication authentication = new UsernamePasswordAuthenticationToken(email, null,
+                            AuthorityUtils.commaSeparatedStringToAuthorityList(authorities));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             } catch (Exception e) {
                 // ADD THIS LINE to print the true cause to your terminal

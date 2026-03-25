@@ -33,7 +33,7 @@ public class SecurityConfig {
         CsrfTokenRequestAttributeHandler csrfTokenRequestAttributeHandler = new CsrfTokenRequestAttributeHandler();
         return httpSecurity
                 .authorizeHttpRequests(req -> req
-                        .requestMatchers("/login","/auth/login","/auth/register","/auth/refresh").permitAll()
+                        .requestMatchers("/login","/auth/login","/auth/register","/auth/refresh","/auth/certs").permitAll()
                         .anyRequest().authenticated())
                 .formLogin(Customizer.withDefaults())
                 .httpBasic(hbc -> hbc.authenticationEntryPoint(new CustomAuthenticationEntryPoint()))

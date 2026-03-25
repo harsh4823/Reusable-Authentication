@@ -35,9 +35,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Map;
+import java.security.PublicKey;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -139,6 +138,16 @@ public class AuthUserController {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Logout failed");
     }
 
+    @GetMapping("/certs")
+    public ResponseEntity<Map<String,String >> getPublicKey(){
+        PublicKey publicKey = authUtil.getPublicKey();
+        String base64PublicKey = Base64.getEncoder().encodeToString(publicKey.getEncoded());
+        Map<String, String> response = new HashMap<>();
+        response.put("kty", "RSA");
+        response.put("use", "sig");
+        response.put("publicKey", base64PublicKey);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
 
     @GetMapping("/hello")
     public String hello(){

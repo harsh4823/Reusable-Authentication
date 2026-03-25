@@ -8,9 +8,11 @@ import com.auth.auth_app.entity.Role;
 import com.auth.auth_app.repository.LinkedAccountsRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
@@ -20,6 +22,10 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.stream.Collectors;
@@ -30,18 +36,42 @@ public class AuthUtil {
 
     private final Environment env;
     private final LinkedAccountsRepository linkedAccountsRepository;
+    private PrivateKey privateKey;
+    @Getter
+    private PublicKey publicKey;
 
-    public String generateJWTToken(Authentication authentication){
-        String secret = env.getProperty(ApplicationConstant.JWT_SECRET,ApplicationConstant.JWT_SECRET_DEFAULT_VALUE);
-        SecretKey secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-        return Jwts.builder().issuer("Harsh").subject("JWT Token")
-                .claim("email",authentication.getName())
-                .claim("authorities",authentication.getAuthorities().stream().map(
-                        GrantedAuthority::getAuthority
-                ).collect(Collectors.joining(",")))
+    @PostConstruct
+    public void initKeys() {
+        try {
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+            keyPairGenerator.initialize(2048);
+            KeyPair keyPair = keyPairGenerator.generateKeyPair();
+
+            this.privateKey = keyPair.getPrivate();
+            this.publicKey = keyPair.getPublic();
+        }catch (Exception e) {
+            throw new RuntimeException("Failed to initialize RSA key pair", e);
+        }
+    }
+
+    public String generateJWTToken(Authentication authentication) {
+        String authorities = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(","));
+
+        if (authorities.isEmpty()) {
+            authorities = "ROLE_USER";
+        }
+
+        return Jwts.builder()
+                .issuer("Harsh")
+                .subject("JWT Token")
+                .claim("email", authentication.getName())
+                .claim("authorities", authorities)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() +  900000 ))
-                .signWith(secretKey).compact();
+                .expiration(new Date(System.currentTimeMillis() + 900000))
+                .signWith(privateKey, Jwts.SIG.RS256)
+                .compact();
     }
 
     public String generateJWTToken(AuthUser authUser){

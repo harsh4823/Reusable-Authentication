@@ -41,11 +41,11 @@ public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
             response.addCookie(jwtCookie);
 
             String refreshToken = loginResponse.refreshToken();
-            Cookie refreshCookie = new Cookie("refreshToken",refreshToken);
-            jwtCookie.setHttpOnly(true);     // Prevents JavaScript (XSS) from reading the token
-            jwtCookie.setSecure(false);      // Set to true in production when using HTTPS
-            jwtCookie.setPath("/");          // Available to all API endpoints
-            jwtCookie.setMaxAge(24*7*60*60);      // Expiration in seconds (align with JWT expiration)
+            Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
+            refreshCookie.setHttpOnly(true);       // ← refreshCookie, not jwtCookie
+            refreshCookie.setSecure(false);
+            refreshCookie.setPath("/");
+            refreshCookie.setMaxAge(7 * 24 * 60 * 60); // 7 days in seconds
             response.addCookie(refreshCookie);
 
             response.setStatus(HttpServletResponse.SC_OK);

@@ -2,12 +2,12 @@ package com.auth.auth_app.config;
 
 import com.auth.auth_app.Exception.CustomAuthenticationEntryPoint;
 import com.auth.auth_app.filter.CsrfTokenFilter;
-import com.auth.auth_app.filter.JWTTokenGeneratorFilter;
 import com.auth.auth_app.filter.JWTTokenValidatorFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer;
@@ -23,6 +23,7 @@ import java.util.Collections;
 @Configuration
 @Slf4j
 @RequiredArgsConstructor
+@Order(2)
 public class SecurityConfig {
 
     private final Oauth2SuccessHandler oauth2SuccessHandler;
@@ -58,10 +59,16 @@ public class SecurityConfig {
                 }))
                 .csrf(csrfConfig -> csrfConfig
                         .csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
-                        .ignoringRequestMatchers("/login","/auth/login","/auth/refresh")
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                        .ignoringRequestMatchers(
+                        "/login",
+                                "/auth/login",
+                                "/auth/register",
+                                "/auth/refresh",
+                                "/auth/logout/single",
+                                "/auth/logout/all",
+                                "/auth/certs"
+                        ).csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .addFilterAfter(new CsrfTokenFilter(), BasicAuthenticationFilter.class)
-                .addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class)
                 .addFilterBefore(jwtTokenValidatorFilter, BasicAuthenticationFilter.class)
                 .build();
     }

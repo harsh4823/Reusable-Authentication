@@ -75,16 +75,14 @@ public class AuthUtil {
     }
 
     public String generateJWTToken(AuthUser authUser){
-        String secret = env.getProperty(ApplicationConstant.JWT_SECRET,ApplicationConstant.JWT_SECRET_DEFAULT_VALUE);
-        SecretKey secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         return Jwts.builder()
                 .issuer("Harsh")
                 .subject("JWT Token")
-                .claim("email",authUser.getEmail())
+                .claim("email", authUser.getEmail())
                 .claim("authorities", "ROLE_USER")
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() +  900000 ))
-                .signWith(secretKey)
+                .expiration(new Date(System.currentTimeMillis() + 900000))
+                .signWith(privateKey, Jwts.SIG.RS256)
                 .compact();
     }
 

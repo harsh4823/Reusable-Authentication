@@ -4,12 +4,14 @@ import com.auth.auth_app.Exception.Oauth2MissingEmailException;
 import com.auth.auth_app.entity.AuthUser;
 import com.auth.auth_app.entity.LinkedAccounts;
 import com.auth.auth_app.entity.ProviderType;
+import com.auth.auth_app.entity.Role;
 import com.auth.auth_app.model.AuthUserDto;
 import com.auth.auth_app.model.LoginRequest;
 import com.auth.auth_app.model.LoginResponse;
 import com.auth.auth_app.model.OAuth2UserInfo;
 import com.auth.auth_app.repository.AuthUserRepository;
 import com.auth.auth_app.repository.LinkedAccountsRepository;
+import com.auth.auth_app.repository.RoleRepository;
 import com.auth.auth_app.repository.TokenRepository;
 import com.auth.auth_app.service.IAuthService;
 import com.auth.auth_app.service.ICloudinaryService;
@@ -20,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,9 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -48,42 +49,43 @@ public class AuthServiceImp implements IAuthService {
     private final AuthUtil authUtil;
     private final IRefreshTokenService refreshTokenService;
     private final TokenRepository tokenRepository;
+    private final RoleRepository roleRepository;
 
     @Override
     public LoginResponse authenticateAndGenerateToken(LoginRequest loginRequest) {
-        String jwt = "";
-        Authentication authentication = UsernamePasswordAuthenticationToken.unauthenticated(loginRequest.email(),loginRequest.password());
+        // Step 1: Authenticate FIRST — throws BadCredentialsException if wrong password
+        Authentication authentication = UsernamePasswordAuthenticationToken
+                .unauthenticated(loginRequest.email(), loginRequest.password());
         Authentication authenticate = authenticationManager.authenticate(authentication);
 
-        AuthUser authUser = authUserRepository.findByEmail(loginRequest.email()).orElse(null);
+        // Step 2: Only reach here if credentials are valid
+        if (authenticate != null && authenticate.isAuthenticated()) {
+            AuthUser authUser = authUserRepository.findByEmail(loginRequest.email())
+                    .orElseThrow(() -> new RuntimeException("User not found after authentication"));
 
-        String refreshToken = null;
+            String jwt = authUtil.generateJWTToken(authenticate);
+            String refreshToken = refreshTokenService.createRefreshToken(authUser.getUserId()).getToken();
+            tokenRepository.storeTokens(authUser.getUserId(), jwt, refreshToken);
 
-        if (authUser!=null){
-            refreshToken = refreshTokenService.createRefreshToken(authUser.getUserId()).getToken();
+            return new LoginResponse(HttpStatus.OK.getReasonPhrase(), jwt, refreshToken);
         }
-
-        if (authentication!=null && authenticate.isAuthenticated()){
-            jwt = authUtil.generateJWTToken(authenticate);
-        }
-
-        if (authUser!=null){
-            tokenRepository.storeTokens(authUser.getUserId(),jwt,refreshToken);
-        }
-
-        return new LoginResponse(HttpStatus.OK.getReasonPhrase(),jwt, refreshToken);
+        throw new BadCredentialsException("Authentication failed");
     }
 
     @Override
     @Transactional
     public void registerUser(AuthUserDto authUserDto, MultipartFile profilePicture) throws IOException {
-            String hashPassword = passwordEncoder.encode(authUserDto.password());
+        Role userRole = roleRepository.findByName("ROLE_USER")
+                .orElseThrow(() -> new RuntimeException("Default role ROLE_USER not found in DB"));
+
+        String hashPassword = passwordEncoder.encode(authUserDto.password());
             Map data = cloudinaryService.upload(profilePicture);
             AuthUser authUser = AuthUser.builder()
                     .name(authUserDto.name())
                     .password(hashPassword)
                     .email(authUserDto.email())
                     .image(data.get("url").toString())
+                    .roles(new HashSet<>(Set.of(userRole)))
                     .build();
 
             authUserRepository.save(authUser);

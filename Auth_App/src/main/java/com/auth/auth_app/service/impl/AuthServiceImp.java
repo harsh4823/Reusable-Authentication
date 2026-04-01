@@ -101,12 +101,16 @@ public class AuthServiceImp implements IAuthService {
             imageUrl = data.get("url").toString();
         }
 
+        Role userRole = roleRepository.findByName("ROLE_USER")
+                .orElseThrow(() -> new RuntimeException("Default role ROLE_USER not found in DB"));
+
         AuthUser newUser = AuthUser.builder()
                 .email(oAuth2UserInfo.email())
                 .password(null)
                 .name(oAuth2UserInfo.name())
                 .image(imageUrl)
                 .linkedAccounts(new ArrayList<>())
+                .roles(new HashSet<>(Set.of(userRole)))
                 .build();
 
         newUser = authUserRepository.save(newUser);

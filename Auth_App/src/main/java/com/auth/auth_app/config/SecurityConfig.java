@@ -35,6 +35,7 @@ public class SecurityConfig {
         return httpSecurity
                 .authorizeHttpRequests(req -> req
                         .requestMatchers("/login","/auth/login","/auth/register","/auth/refresh","/auth/certs").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .formLogin(Customizer.withDefaults())
                 .httpBasic(hbc -> hbc.authenticationEntryPoint(new CustomAuthenticationEntryPoint()))

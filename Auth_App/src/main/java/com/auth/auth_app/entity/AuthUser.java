@@ -43,4 +43,14 @@ public class AuthUser {
         inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
+
+    @OneToMany(mappedBy = "owner",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    @Builder.Default
+    private List<Realm> ownedRealms = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_realm_id")
+    private Realm memberRealm;
 }

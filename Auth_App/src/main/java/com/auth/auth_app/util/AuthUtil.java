@@ -1,13 +1,11 @@
 package com.auth.auth_app.util;
 
-import com.auth.auth_app.constant.ApplicationConstant;
 import com.auth.auth_app.entity.AuthUser;
 import com.auth.auth_app.entity.LinkedAccounts;
 import com.auth.auth_app.entity.ProviderType;
 import com.auth.auth_app.entity.Role;
 import com.auth.auth_app.repository.LinkedAccountsRepository;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,8 +18,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
@@ -75,11 +71,24 @@ public class AuthUtil {
     }
 
     public String generateJWTToken(AuthUser authUser){
+        String authorities = authUser.getRoles().stream()
+                .map(Role::getName)
+                .collect(Collectors.joining(","));
+
+        if (authorities.isEmpty()){
+            authorities = "ROLE_USER";
+        }
+
+        String realm = authUser.getMemberRealm() != null
+                ? authUser.getMemberRealm().getRealmName()
+                : "master";
+
         return Jwts.builder()
                 .issuer("Harsh")
                 .subject("JWT Token")
                 .claim("email", authUser.getEmail())
-                .claim("authorities", "ROLE_USER")
+                .claim("authorities", authorities)
+                .claim("realm",realm)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + 900000))
                 .signWith(privateKey, Jwts.SIG.RS256)

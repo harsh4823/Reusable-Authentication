@@ -35,6 +35,7 @@ public class AuthUser {
     private LocalDate updatedAt;
 
     @OneToMany(mappedBy = "authUser",cascade = CascadeType.ALL,orphanRemoval = true)
+    @Builder.Default
     private List<LinkedAccounts> linkedAccounts = new ArrayList<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -44,9 +45,7 @@ public class AuthUser {
     )
     private Set<Role> roles = new HashSet<>();
 
-    @OneToMany(mappedBy = "owner",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true)
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Realm> ownedRealms = new ArrayList<>();
 

@@ -34,7 +34,17 @@ public class SecurityConfig {
         CsrfTokenRequestAttributeHandler csrfTokenRequestAttributeHandler = new CsrfTokenRequestAttributeHandler();
         return httpSecurity
                 .authorizeHttpRequests(req -> req
-                        .requestMatchers("/login","/auth/login","/auth/register","/auth/refresh","/auth/certs").permitAll()
+                        .requestMatchers(
+                                "/login",
+                                "/auth/login",
+                                "/auth/register",
+                                "/auth/refresh",
+                                "/auth/certs",
+                                "/*/.well-known/openid-configuration",
+                                "/*/protocol/openid-connect/certs",
+                                "/*/protocol/openid-connect/token/introspect"
+                        )
+                        .permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .formLogin(Customizer.withDefaults())

@@ -1,10 +1,8 @@
 package com.auth.auth_app.util;
 
-import com.auth.auth_app.entity.AuthUser;
-import com.auth.auth_app.entity.LinkedAccounts;
-import com.auth.auth_app.entity.ProviderType;
-import com.auth.auth_app.entity.Role;
+import com.auth.auth_app.entity.*;
 import com.auth.auth_app.repository.LinkedAccountsRepository;
+import com.auth.auth_app.repository.RsaKeyPairRepository;
 import io.jsonwebtoken.Jwts;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
@@ -12,42 +10,81 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.env.Environment;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class AuthUtil {
 
-    private final Environment env;
     private final LinkedAccountsRepository linkedAccountsRepository;
+    private final RsaKeyPairRepository rsaKeyPairRepository;
+
     private PrivateKey privateKey;
+
     @Getter
     private PublicKey publicKey;
 
+    private static final String KEY_ID = "main";
+
     @PostConstruct
     public void initKeys() {
-        try {
-            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-            keyPairGenerator.initialize(2048);
-            KeyPair keyPair = keyPairGenerator.generateKeyPair();
 
-            this.privateKey = keyPair.getPrivate();
-            this.publicKey = keyPair.getPublic();
-        }catch (Exception e) {
-            throw new RuntimeException("Failed to initialize RSA key pair", e);
-        }
+        rsaKeyPairRepository.findById(KEY_ID).ifPresentOrElse(
+                stored -> {
+                    log.info("Loading RSA Key Pair from databse");
+
+                    try {
+                        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+
+                        byte[] publicKeyBytes = Base64.getDecoder().decode(stored.getPublicKey());
+                        this.publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(publicKeyBytes));
+
+                        byte[] privateKeyBytes = Base64.getDecoder().decode(stored.getPrivateKey());
+                        this.privateKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(privateKeyBytes));
+
+                        log.info("RSA Key Pair Loaded successfully from databse");
+                    }catch (Exception e){
+                        throw new RuntimeException("Failed to load RSA Key Pair from databse");
+                    }
+                },
+                () -> {
+                    log.info("No RSA Key Pair found in database , generating new one and saving to database.");
+                    try {
+                        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+                        keyPairGenerator.initialize(2048);
+                        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+
+                        this.privateKey = keyPair.getPrivate();
+                        this.publicKey = keyPair.getPublic();
+
+                        String encodedPrivateKey = Base64.getEncoder().encodeToString(this.privateKey.getEncoded());
+                        String encodedPublicKey = Base64.getEncoder().encodeToString(this.publicKey.getEncoded());
+
+                        rsaKeyPairRepository.save(RsaKeyPair.builder()
+                                        .pairId(KEY_ID)
+                                        .publicKey(encodedPublicKey)
+                                        .privateKey(encodedPrivateKey)
+                                        .build());
+
+                        log.info("RSA Key Pair Generated and Saved Successfully");
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to generate RSA Key Pair.");
+                    }
+                }
+        );
     }
 
     public String generateJWTToken(Authentication authentication) {

@@ -24,17 +24,13 @@ public class DataSeeder implements CommandLineRunner {
     private final AuthUserRepository authUserRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // CommandLineRunner.run() executes once automatically after Spring Boot starts up.
-    // This is the standard way to seed data without writing raw SQL inserts manually.
     @Override
     public void run(String... args) {
 
-        // The roles we need in the system
         List<String> requiredRoles = List.of("ROLE_USER", "ROLE_SELLER", "ROLE_ADMIN");
 
         for (String roleName : requiredRoles) {
-            // Only insert if it doesn't already exist — safe to restart the server
-            if (!roleRepository.existsByName(roleName)) {
+            if (!roleRepository.existsByNameAndRealmIsNull(roleName)) {
                 Role role = Role.builder()
                         .id(UUID.randomUUID())
                         .name(roleName)
@@ -44,11 +40,9 @@ public class DataSeeder implements CommandLineRunner {
             }
         }
 
-        // Inside DataSeeder.run() — after seeding roles:
 
-// Create a default admin user if none exists
         if (authUserRepository.findByEmail("admin@yourapp.com").isEmpty()) {
-            Role adminRole = roleRepository.findByName("ROLE_ADMIN").orElseThrow();
+            Role adminRole = roleRepository.findByNameAndRealmIsNull("ROLE_ADMIN").orElseThrow();
 
             AuthUser adminUser = AuthUser.builder()
                     .email("admin@yourapp.com")

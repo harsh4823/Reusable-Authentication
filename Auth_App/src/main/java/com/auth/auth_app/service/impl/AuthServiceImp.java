@@ -75,7 +75,7 @@ public class AuthServiceImp implements IAuthService {
     @Override
     @Transactional
     public void registerUser(AuthUserDto authUserDto, MultipartFile profilePicture) throws IOException {
-        Role userRole = roleRepository.findByName("ROLE_USER")
+        Role userRole = roleRepository.findByNameAndRealmIsNull("ROLE_USER")
                 .orElseThrow(() -> new RuntimeException("Default role ROLE_USER not found in DB"));
 
         String hashPassword = passwordEncoder.encode(authUserDto.password());
@@ -101,7 +101,7 @@ public class AuthServiceImp implements IAuthService {
             imageUrl = data.get("url").toString();
         }
 
-        Role userRole = roleRepository.findByName("ROLE_USER")
+        Role userRole = roleRepository.findByNameAndRealmIsNull("ROLE_USER")
                 .orElseThrow(() -> new RuntimeException("Default role ROLE_USER not found in DB"));
 
         AuthUser newUser = AuthUser.builder()

@@ -11,15 +11,18 @@ import java.util.UUID;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "roles")
+@Table(
+        name = "roles",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"name","realm_id"})
+)
 public class Role {
     @Id
     private UUID id = UUID.randomUUID();
 
-    @Column(nullable = false,unique = true)
+    @Column(nullable = false)
     private String name;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "realm_id")
     private Realm realm;
 }

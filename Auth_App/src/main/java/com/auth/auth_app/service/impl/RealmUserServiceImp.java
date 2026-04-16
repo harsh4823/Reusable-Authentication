@@ -51,7 +51,7 @@ public class RealmUserServiceImp implements IRealmUserService {
         AuthUser authUser = findUserInRealm(realm,userId);
 
         authUser.setName(request.name());
-        authUser.setEnabled(realm.isEnabled());
+        authUser.setEnabled(request.enabled());
 
         if (request.roles() != null){
             Set<Role> roles = request.roles().stream()

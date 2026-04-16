@@ -42,7 +42,8 @@ public class SecurityConfig {
                                 "/auth/certs",
                                 "/*/.well-known/openid-configuration",
                                 "/*/protocol/openid-connect/certs",
-                                "/*/protocol/openid-connect/token/introspect"
+                                "/*/protocol/openid-connect/token/introspect",
+                                "/*/protocol/openid-connect/user-info"
                         )
                         .permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
@@ -71,13 +72,15 @@ public class SecurityConfig {
                 .csrf(csrfConfig -> csrfConfig
                         .csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
                         .ignoringRequestMatchers(
-                        "/login",
+                                "/login",
                                 "/auth/login",
                                 "/auth/register",
                                 "/auth/refresh",
                                 "/auth/logout/single",
                                 "/auth/logout/all",
-                                "/auth/certs"
+                                "/auth/certs",
+                                "/*/protocol/openid-connect/token/introspect",
+                                "/*/protocol/openid-connect/userinfo"
                         ).csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .addFilterAfter(new CsrfTokenFilter(), BasicAuthenticationFilter.class)
                 .addFilterBefore(jwtTokenValidatorFilter, BasicAuthenticationFilter.class)

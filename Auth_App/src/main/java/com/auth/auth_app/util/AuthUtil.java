@@ -32,6 +32,7 @@ public class AuthUtil {
     private final LinkedAccountsRepository linkedAccountsRepository;
     private final RsaKeyPairRepository rsaKeyPairRepository;
 
+    @Getter
     private PrivateKey privateKey;
 
     @Getter

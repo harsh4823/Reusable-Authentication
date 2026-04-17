@@ -40,6 +40,7 @@ public class SecurityConfig {
                                 "/auth/register",
                                 "/auth/refresh",
                                 "/auth/certs",
+                                "/onboard",
                                 "/*/.well-known/openid-configuration",
                                 "/*/protocol/openid-connect/certs",
                                 "/*/protocol/openid-connect/token/introspect",
@@ -79,6 +80,7 @@ public class SecurityConfig {
                                 "/auth/logout/single",
                                 "/auth/logout/all",
                                 "/auth/certs",
+                                "/onboard",
                                 "/*/protocol/openid-connect/token/introspect",
                                 "/*/protocol/openid-connect/userinfo"
                         ).csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))

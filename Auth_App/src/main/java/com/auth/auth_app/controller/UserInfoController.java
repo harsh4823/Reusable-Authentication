@@ -55,7 +55,7 @@ public class UserInfoController {
 
             String tokenRealm =  claims.get("realm", String.class);
 
-            if (tokenRealm != null && !tokenRealm.equals(realm) && tokenRealm.equals("master")){
+            if (tokenRealm != null && !tokenRealm.equals(realm) && !tokenRealm.equals("master")){
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("Token realm does not match with requested realm");
             }

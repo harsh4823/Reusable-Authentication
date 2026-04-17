@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Objects;
 
 @RestController
-@RequestMapping("admin/realms")
+@RequestMapping("/admin/realms")
 @RequiredArgsConstructor
 public class RealmController {
 

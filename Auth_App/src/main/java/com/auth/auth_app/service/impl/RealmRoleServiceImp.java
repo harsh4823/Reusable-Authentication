@@ -23,6 +23,7 @@ public class RealmRoleServiceImp implements IRealmRoleService {
     private final RoleRepository roleRepository;
 
     @Override
+    @Transactional
     public RoleResponse createRole(String realmName, RoleRequest roleRequest) {
         Realm realm = findRealmByName(realmName);
 
@@ -35,6 +36,8 @@ public class RealmRoleServiceImp implements IRealmRoleService {
                 .name(roleRequest.name())
                 .realm(realm)
                 .build();
+
+        roleRepository.save(role);
 
         return buildResponse(role);
     }

@@ -23,7 +23,7 @@ public class OnBoardingClientController {
     public ResponseEntity<OnboardingResponse> onboard(
             @Valid @RequestBody OnboardingRequest request
     ){
-        return ResponseEntity.status(HttpStatus.OK)
+        return ResponseEntity.status(HttpStatus.CREATED)
                 .body(onBoardingClientService.onboard(request));
     }
 }

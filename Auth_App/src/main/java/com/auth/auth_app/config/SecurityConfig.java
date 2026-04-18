@@ -44,7 +44,7 @@ public class SecurityConfig {
                                 "/*/.well-known/openid-configuration",
                                 "/*/protocol/openid-connect/certs",
                                 "/*/protocol/openid-connect/token/introspect",
-                                "/*/protocol/openid-connect/user-info"
+                                "/*/protocol/openid-connect/userinfo"
                         )
                         .permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")

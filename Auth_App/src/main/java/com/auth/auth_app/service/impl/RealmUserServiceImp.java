@@ -63,6 +63,7 @@ public class RealmUserServiceImp implements IRealmUserService {
             authUser.setRoles(roles);
         }
 
+        authUserRepository.save(authUser);
         return buildResponse(authUser);
     }
 
@@ -86,6 +87,7 @@ public class RealmUserServiceImp implements IRealmUserService {
                 .orElseGet(() -> roleRepository.findByNameAndRealmIsNull(roleName)
                         .orElseThrow(() -> new ResourceNotFoundException("Role","name",roleName)));
         authUser.getRoles().add(role);
+        authUserRepository.save(authUser);
         return buildResponse(authUser);
     }
 
@@ -96,6 +98,7 @@ public class RealmUserServiceImp implements IRealmUserService {
         AuthUser authUser = findUserInRealm(realm,userId);
 
         authUser.getRoles().removeIf(role -> role.getName().equals(roleName));
+        authUserRepository.save(authUser);
         return buildResponse(authUser);
     }
 

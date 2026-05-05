@@ -3,10 +3,12 @@ package com.auth.auth_app.service.impl;
 import com.auth.auth_app.Exception.ResourceNotFoundException;
 import com.auth.auth_app.entity.AuthUser;
 import com.auth.auth_app.entity.Realm;
+import com.auth.auth_app.entity.Role;
 import com.auth.auth_app.model.RealmRequest;
 import com.auth.auth_app.model.RealmResponse;
 import com.auth.auth_app.repository.AuthUserRepository;
 import com.auth.auth_app.repository.RealmRepository;
+import com.auth.auth_app.repository.RoleRepository;
 import com.auth.auth_app.service.IRealmService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class RealmServiceImp implements IRealmService {
 
     private final AuthUserRepository authUserRepository;
     private final RealmRepository realmRepository;
+    private final RoleRepository roleRepository;
 
     @Transactional
     @Override
@@ -39,6 +42,19 @@ public class RealmServiceImp implements IRealmService {
                 .owner(owner)
                 .build();
         Realm savedRealm = realmRepository.save(realm);
+
+        owner.setMemberRealm(savedRealm);
+
+        boolean alreadyClient = owner.getRoles().stream()
+                .anyMatch(r->r.getName().equals("ROLE_CLIENT"));
+
+        if (!alreadyClient){
+            Role clientRole = roleRepository.findByNameAndRealmIsNull("Role_Client")
+                    .orElseThrow(()-> new RuntimeException("Role Client not seeded"));
+
+            owner.getRoles().add(clientRole);
+            authUserRepository.save(owner);
+        }
 
         return buildResponse(savedRealm);
     }

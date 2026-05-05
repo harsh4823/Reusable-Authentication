@@ -36,11 +36,13 @@ public class RealmController {
     }
 
     @GetMapping("/{realmName}")
+    @PreAuthorize("@realmOwnerShipGuard.isOwnerOrAdmin(#realmName)")
     public ResponseEntity<RealmResponse> getRealm(@PathVariable String realmName) {
         return ResponseEntity.ok(realmService.getRealmByName(realmName));
     }
 
     @PutMapping("/{realmName}")
+    @PreAuthorize("@realmOwnerShipGuard.isOwnerOrAdmin(#realmName)")
     public ResponseEntity<RealmResponse> updateRealm(@PathVariable String realmName,
                                                      @RequestBody RealmRequest request) {
         return ResponseEntity.ok(realmService.updateRealm(realmName, request));

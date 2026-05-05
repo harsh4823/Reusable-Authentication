@@ -50,6 +50,4 @@ public class AdminController {
     public ResponseEntity<ClientRegistrationResponse> regenerateSecret(@PathVariable String clientId) {
         return ResponseEntity.ok(adminService.regenerateClientSecret(clientId));
     }
-
-
 }

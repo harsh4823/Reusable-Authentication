@@ -6,6 +6,8 @@ public record OnboardingResponse (
    String realmName,
    String clientId,
    String clientSecret,
+   String accessToken,
+   String refreshToken,
    String wellKnownUrl,
    String tokenEndPoint
 ) {}

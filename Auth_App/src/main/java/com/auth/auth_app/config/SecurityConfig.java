@@ -44,9 +44,11 @@ public class SecurityConfig {
                                 "/*/.well-known/openid-configuration",
                                 "/*/protocol/openid-connect/certs",
                                 "/*/protocol/openid-connect/token/introspect",
-                                "/*/protocol/openid-connect/userinfo"
+                                "/*/protocol/openid-connect/userinfo",
+                                "/*/protocol/openid-connect/token"
                         )
                         .permitAll()
+                        .requestMatchers("/admin/realms/**").hasAnyRole("ADMIN","CLIENT")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .formLogin(Customizer.withDefaults())

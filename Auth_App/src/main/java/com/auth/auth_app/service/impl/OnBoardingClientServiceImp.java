@@ -9,6 +9,8 @@ import com.auth.auth_app.repository.AuthUserRepository;
 import com.auth.auth_app.repository.RealmRepository;
 import com.auth.auth_app.repository.RoleRepository;
 import com.auth.auth_app.service.IOnBoardingClientService;
+import com.auth.auth_app.service.IRefreshTokenService;
+import com.auth.auth_app.util.AuthUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,6 +37,8 @@ public class OnBoardingClientServiceImp implements IOnBoardingClientService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final RegisteredClientRepository registeredClientRepository;
+    private final AuthUtil authUtil;
+    private final IRefreshTokenService refreshTokenService;
 
     @Override
     @Transactional
@@ -48,8 +52,8 @@ public class OnBoardingClientServiceImp implements IOnBoardingClientService {
             throw new RuntimeException("Realm name already exists : " + request.realmName());
         }
 
-        Role userRole = roleRepository.findByNameAndRealmIsNull("ROLE_USER")
-                .orElseThrow(() -> new RuntimeException("Role_USER not seeded"));
+        Role userRole = roleRepository.findByNameAndRealmIsNull("ROLE_CLIENT")
+                .orElseThrow(() -> new RuntimeException("Role_CLIENT not seeded"));
 
         AuthUser owner = AuthUser.builder()
                 .email(request.email())
@@ -104,12 +108,18 @@ public class OnBoardingClientServiceImp implements IOnBoardingClientService {
 
         String baseUrl = "http://localhost:8080/api/" + request.realmName();
 
+        String accessToken = authUtil.generateJWTToken(owner);
+
+        String refreshToken = refreshTokenService.createRefreshToken(owner.getUserId()).getToken();
+
         return new OnboardingResponse(
                 "Onboarding successful! Save your clientSecret — it will not be shown again.",
                 request.email(),
                 request.realmName(),
                 clientId,
                 plainSecret,
+                accessToken,
+                refreshToken,
                 baseUrl + "/.well-known/openid-configuration",
                 baseUrl + "/protocol/openid-connect/token"
         );

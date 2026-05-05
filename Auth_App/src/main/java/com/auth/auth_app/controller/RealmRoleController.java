@@ -13,8 +13,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/admin/realms/{realmName}/roles")
+@PreAuthorize("@realmOwnerShipGuard.isOwnerOrAdmin(#realmName)")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ROLE_ADMIN')")
 public class RealmRoleController {
 
     private final IRealmRoleService realmRoleService;

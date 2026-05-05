@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/admin/realms/{realmName}/users")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ROLE_ADMIN')")
+@PreAuthorize("@realmOwnerShipGuard.isOwnerOrAdmin(#realmName)")
 public class RealmUserController {
 
     private final IRealmUserService realmUserService;

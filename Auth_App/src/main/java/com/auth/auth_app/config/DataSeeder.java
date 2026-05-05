@@ -27,7 +27,7 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) {
 
-        List<String> requiredRoles = List.of("ROLE_USER", "ROLE_SELLER", "ROLE_ADMIN");
+        List<String> requiredRoles = List.of("ROLE_USER", "ROLE_CLIENT", "ROLE_ADMIN");
 
         for (String roleName : requiredRoles) {
             if (!roleRepository.existsByNameAndRealmIsNull(roleName)) {

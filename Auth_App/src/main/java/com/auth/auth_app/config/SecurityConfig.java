@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer;
@@ -45,9 +46,11 @@ public class SecurityConfig {
                                 "/*/protocol/openid-connect/certs",
                                 "/*/protocol/openid-connect/token/introspect",
                                 "/*/protocol/openid-connect/userinfo",
-                                "/*/protocol/openid-connect/token"
+                                "/*/protocol/openid-connect/token",
+                                "/*/protocol/openid-connect/register"
                         )
                         .permitAll()
+                        .requestMatchers(HttpMethod.POST,"/admin/realms").authenticated()
                         .requestMatchers("/admin/realms/**").hasAnyRole("ADMIN","CLIENT")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
@@ -83,6 +86,8 @@ public class SecurityConfig {
                                 "/auth/logout/all",
                                 "/auth/certs",
                                 "/onboard",
+                                "/*/protocol/openid-connect/token",
+                                "/*/protocol/openid-connect/register",
                                 "/*/protocol/openid-connect/token/introspect",
                                 "/*/protocol/openid-connect/userinfo"
                         ).csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))

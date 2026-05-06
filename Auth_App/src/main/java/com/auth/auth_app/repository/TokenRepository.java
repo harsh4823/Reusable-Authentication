@@ -52,7 +52,8 @@ public class TokenRepository {
 
         if (accessKeys != null && !accessKeys.isEmpty()) {
             for (String key : accessKeys) {
-                String token = key.substring(key.lastIndexOf(":") + 1);
+                String prefix = ACCESS_TOKEN_KEY_PREFIX + userId + ":";
+                String token = key.substring(prefix.length());
 
                 redisTemplate.opsForValue().set(ACCESS_BLACKLIST_PREFIX + token, "blacklisted", jwtExpirationInSeconds, TimeUnit.SECONDS);
                 redisTemplate.delete(key);

@@ -8,6 +8,7 @@ import com.auth.auth_app.model.OnboardingResponse;
 import com.auth.auth_app.repository.AuthUserRepository;
 import com.auth.auth_app.repository.RealmRepository;
 import com.auth.auth_app.repository.RoleRepository;
+import com.auth.auth_app.repository.TokenRepository;
 import com.auth.auth_app.service.IOnBoardingClientService;
 import com.auth.auth_app.service.IRefreshTokenService;
 import com.auth.auth_app.util.AuthUtil;
@@ -39,6 +40,7 @@ public class OnBoardingClientServiceImp implements IOnBoardingClientService {
     private final RegisteredClientRepository registeredClientRepository;
     private final AuthUtil authUtil;
     private final IRefreshTokenService refreshTokenService;
+    private final TokenRepository tokenRepository;
 
     @Override
     @Transactional
@@ -111,6 +113,8 @@ public class OnBoardingClientServiceImp implements IOnBoardingClientService {
         String accessToken = authUtil.generateJWTToken(owner);
 
         String refreshToken = refreshTokenService.createRefreshToken(owner.getUserId()).getToken();
+
+        tokenRepository.storeTokens(owner.getUserId(), accessToken, refreshToken);
 
         return new OnboardingResponse(
                 "Onboarding successful! Save your clientSecret — it will not be shown again.",

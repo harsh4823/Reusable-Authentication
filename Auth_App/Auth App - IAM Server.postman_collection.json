@@ -1,0 +1,1320 @@
+{
+  "info": {
+    "_postman_id": "c09b7dae-7f72-454b-af6b-d2fe5981972e",
+    "name": "Auth App - IAM Server",
+    "description": "Complete API collection for the Auth_App IAM Server.\n\nBase URL: [http://localhost:8080/api](http://localhost:8080/api)\n\n── SETUP ──────────────────────────────────\n\n1. Import this collection.\n    \n2. Set `baseUrl` collection variable (default: [http://localhost:8080/api](http://localhost:8080/api)).\n    \n3. Hit any GET endpoint first (e.g. OIDC Discovery) — Spring will plant the XSRF-TOKEN cookie.\n    \n4. The collection pre-request script reads that cookie and auto-populates {{xsrfToken}}.\n    \n5. All state-changing /admin/** requests automatically send X-XSRF-TOKEN.\n    \n\n── CSRF RULES (from SecurityConfig) ──────  \nIgnored (no CSRF needed):  \n/auth/login, /auth/register, /auth/refresh,  \n/auth/logout/single, /auth/logout/all, /auth/certs,  \n/onboard,  \n/{realm}/protocol/openid-connect/token  \n/{realm}/protocol/openid-connect/register  \n/{realm}/protocol/openid-connect/token/introspect  \n/{realm}/protocol/openid-connect/userinfo\n\nProtected (X-XSRF-TOKEN required):  \nAll POST / PUT / DELETE under /admin/**",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "42335900"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.jwtToken)     pm.collectionVariables.set('accessToken',  res.jwtToken);",
+                  "if (res.refreshToken) pm.collectionVariables.set('refreshToken', res.refreshToken);",
+                  "console.log('Tokens saved to collection variables.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@yourapp.com\",\n  \"password\": \"ChangeMe123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "email",
+                  "value": "user@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "Password123!",
+                  "type": "text"
+                },
+                {
+                  "key": "name",
+                  "value": "John Doe",
+                  "type": "text"
+                },
+                {
+                  "key": "profilePicture",
+                  "type": "file",
+                  "value": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Refresh-Token",
+                "value": "{{refreshToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout (Single Device)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Refresh-Token",
+                "value": "{{refreshToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout/single",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout",
+                "single"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout (All Devices)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout/all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout",
+                "all"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Public Key (CERTS)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/certs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "certs"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Hello (Auth Check)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/hello",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "hello"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Core authentication. All endpoints here are on the CSRF ignore list — no X-XSRF-TOKEN needed."
+    },
+    {
+      "name": "Onboarding",
+      "item": [
+        {
+          "name": "Onboard New Client",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.accessToken)  pm.collectionVariables.set('accessToken',  res.accessToken);",
+                  "if (res.refreshToken) pm.collectionVariables.set('refreshToken', res.refreshToken);",
+                  "if (res.realmName)    pm.collectionVariables.set('realm',        res.realmName);",
+                  "console.log('Tokens and realm saved to collection variables.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"dev@myapp.com\",\n  \"password\": \"SecurePass123!\",\n  \"name\": \"Dev User\",\n  \"appName\": \"My Awesome App\",\n  \"realmName\": \"my-app-realm\",\n  \"redirectUri\": \"http://localhost:3000/callback\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/onboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "onboard"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Self-service onboarding. /onboard is on the CSRF ignore list — no X-XSRF-TOKEN needed."
+    },
+    {
+      "name": "Admin - OAuth2 Clients",
+      "item": [
+        {
+          "name": "Register Client",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{xsrfToken}}",
+                "description": "Required — CSRF protection on /admin/**"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientName\": \"my-service\",\n  \"redirectUris\": [\"http://localhost:3000/callback\"],\n  \"scopes\": [\"openid\", \"profile\", \"email\"],\n  \"grantTypes\": [\"authorization_code\", \"refresh_token\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/clients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "clients"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Clients",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/clients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "clients"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Client by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/clients/:clientId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "clients",
+                ":clientId"
+              ],
+              "variable": [
+                {
+                  "key": "clientId",
+                  "value": "your-client-id"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Client",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{xsrfToken}}",
+                "description": "Required — CSRF protection on /admin/**"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientName\": \"my-service-updated\",\n  \"redirectUris\": [\"http://localhost:3000/callback\", \"http://localhost:4200/callback\"],\n  \"scopes\": [\"openid\", \"profile\"],\n  \"grantTypes\": [\"authorization_code\", \"refresh_token\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/clients/:clientId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "clients",
+                ":clientId"
+              ],
+              "variable": [
+                {
+                  "key": "clientId",
+                  "value": "your-client-id"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Client",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{xsrfToken}}",
+                "description": "Required — CSRF protection on /admin/**"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/clients/:clientId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "clients",
+                ":clientId"
+              ],
+              "variable": [
+                {
+                  "key": "clientId",
+                  "value": "your-client-id"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Regenerate Client Secret",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{xsrfToken}}",
+                "description": "Required — CSRF protection on /admin/**"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/clients/:clientId/regenerate-secret",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "clients",
+                ":clientId",
+                "regenerate-secret"
+              ],
+              "variable": [
+                {
+                  "key": "clientId",
+                  "value": "your-client-id"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "ROLE_ADMIN only. All mutating requests are under /admin/** and are CSRF-protected.\nX-XSRF-TOKEN is required on POST / PUT / DELETE."
+    },
+    {
+      "name": "Admin - Realms",
+      "item": [
+        {
+          "name": "Create Realm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{xsrfToken}}",
+                "description": "Required — CSRF protection on /admin/**"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"realmName\": \"my-realm\",\n  \"displayName\": \"My Application Realm\",\n  \"enabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/realms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "realms"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Realms",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/realms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "realms"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Realm by Name",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/realms/:realmName",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "realms",
+                ":realmName"
+              ],
+              "variable": [
+                {
+                  "key": "realmName",
+                  "value": "{{realm}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Realm",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{xsrfToken}}",
+                "description": "Required — CSRF protection on /admin/**"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"realmName\": \"my-realm\",\n  \"displayName\": \"Updated Display Name\",\n  \"enabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/realms/:realmName",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "realms",
+                ":realmName"
+              ],
+              "variable": [
+                {
+                  "key": "realmName",
+                  "value": "{{realm}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Realm",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{xsrfToken}}",
+                "description": "Required — CSRF protection on /admin/**"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/realms/:realmName",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "realms",
+                ":realmName"
+              ],
+              "variable": [
+                {
+                  "key": "realmName",
+                  "value": "{{realm}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Manage realms. All mutating requests need X-XSRF-TOKEN.\nCreate requires auth. Read/Update requires ADMIN or realm ownership. Delete requires ADMIN."
+    },
+    {
+      "name": "Admin - Realm Roles",
+      "item": [
+        {
+          "name": "Create Role in Realm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{xsrfToken}}",
+                "description": "Required — CSRF protection on /admin/**"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ROLE_EDITOR\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/realms/:realmName/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "realms",
+                ":realmName",
+                "roles"
+              ],
+              "variable": [
+                {
+                  "key": "realmName",
+                  "value": "{{realm}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Roles in Realm",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/realms/:realmName/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "realms",
+                ":realmName",
+                "roles"
+              ],
+              "variable": [
+                {
+                  "key": "realmName",
+                  "value": "{{realm}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Role in Realm",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{xsrfToken}}",
+                "description": "Required — CSRF protection on /admin/**"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/realms/:realmName/roles/:roleName",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "realms",
+                ":realmName",
+                "roles",
+                ":roleName"
+              ],
+              "variable": [
+                {
+                  "key": "realmName",
+                  "value": "{{realm}}"
+                },
+                {
+                  "key": "roleName",
+                  "value": "ROLE_EDITOR"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Manage roles scoped to a specific realm. Requires ADMIN or realm ownership.\nAll mutating requests need X-XSRF-TOKEN."
+    },
+    {
+      "name": "Admin - Realm Users",
+      "item": [
+        {
+          "name": "Get All Users in Realm (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/realms/:realmName/users?page=0&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "realms",
+                ":realmName",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "realmName",
+                  "value": "{{realm}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User in Realm",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/realms/:realmName/users/:userId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "realms",
+                ":realmName",
+                "users",
+                ":userId"
+              ],
+              "variable": [
+                {
+                  "key": "realmName",
+                  "value": "{{realm}}"
+                },
+                {
+                  "key": "userId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User in Realm",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{xsrfToken}}",
+                "description": "Required — CSRF protection on /admin/**"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"enabled\": true,\n  \"roles\": [\"ROLE_USER\", \"ROLE_EDITOR\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/realms/:realmName/users/:userId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "realms",
+                ":realmName",
+                "users",
+                ":userId"
+              ],
+              "variable": [
+                {
+                  "key": "realmName",
+                  "value": "{{realm}}"
+                },
+                {
+                  "key": "userId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove User from Realm",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{xsrfToken}}",
+                "description": "Required — CSRF protection on /admin/**"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/realms/:realmName/users/:userId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "realms",
+                ":realmName",
+                "users",
+                ":userId"
+              ],
+              "variable": [
+                {
+                  "key": "realmName",
+                  "value": "{{realm}}"
+                },
+                {
+                  "key": "userId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Role to User in Realm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{xsrfToken}}",
+                "description": "Required — CSRF protection on /admin/**"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/realms/:realmName/users/:userId/roles/:roleName",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "realms",
+                ":realmName",
+                "users",
+                ":userId",
+                "roles",
+                ":roleName"
+              ],
+              "variable": [
+                {
+                  "key": "realmName",
+                  "value": "{{realm}}"
+                },
+                {
+                  "key": "userId",
+                  "value": "1"
+                },
+                {
+                  "key": "roleName",
+                  "value": "ROLE_EDITOR"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Role from User in Realm",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{xsrfToken}}",
+                "description": "Required — CSRF protection on /admin/**"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/realms/:realmName/users/:userId/roles/:roleName",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "realms",
+                ":realmName",
+                "users",
+                ":userId",
+                "roles",
+                ":roleName"
+              ],
+              "variable": [
+                {
+                  "key": "realmName",
+                  "value": "{{realm}}"
+                },
+                {
+                  "key": "userId",
+                  "value": "1"
+                },
+                {
+                  "key": "roleName",
+                  "value": "ROLE_EDITOR"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Manage users within a realm. Requires ADMIN or realm ownership.\nAll mutating requests need X-XSRF-TOKEN."
+    },
+    {
+      "name": "Realm OIDC - Token & Register",
+      "item": [
+        {
+          "name": "Realm Login (Get Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.accessToken)  pm.collectionVariables.set('accessToken',  res.accessToken);",
+                  "if (res.refreshToken) pm.collectionVariables.set('refreshToken', res.refreshToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/:realm/protocol/openid-connect/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                ":realm",
+                "protocol",
+                "openid-connect",
+                "token"
+              ],
+              "variable": [
+                {
+                  "key": "realm",
+                  "value": "{{realm}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Realm Self-Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"Password123!\",\n  \"name\": \"New User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/:realm/protocol/openid-connect/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                ":realm",
+                "protocol",
+                "openid-connect",
+                "register"
+              ],
+              "variable": [
+                {
+                  "key": "realm",
+                  "value": "{{realm}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Realm-scoped login and self-registration. Both paths are on the CSRF ignore list — no X-XSRF-TOKEN needed."
+    },
+    {
+      "name": "Realm OIDC - Discovery & JWKS",
+      "item": [
+        {
+          "name": "OIDC Discovery Document",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Spring sets the XSRF-TOKEN cookie on this response.",
+                  "// The collection pre-request script picks it up on subsequent requests.",
+                  "const xsrfCookie = pm.cookies.get('XSRF-TOKEN');",
+                  "if (xsrfCookie) {",
+                  "    pm.collectionVariables.set('xsrfToken', decodeURIComponent(xsrfCookie));",
+                  "    console.log('XSRF-TOKEN captured:', decodeURIComponent(xsrfCookie));",
+                  "} else {",
+                  "    console.warn('XSRF-TOKEN cookie not found. Make sure the server is running.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/:realm/.well-known/openid-configuration",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                ":realm",
+                ".well-known",
+                "openid-configuration"
+              ],
+              "variable": [
+                {
+                  "key": "realm",
+                  "value": "{{realm}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "JWKS (Public Keys)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/:realm/protocol/openid-connect/certs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                ":realm",
+                "protocol",
+                "openid-connect",
+                "certs"
+              ],
+              "variable": [
+                {
+                  "key": "realm",
+                  "value": "{{realm}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Standard OIDC discovery and JWKS endpoints. Public GET — no auth or CSRF needed.\nTip: Hit OIDC Discovery first to let Spring plant the XSRF-TOKEN cookie."
+    },
+    {
+      "name": "Realm OIDC - Introspection & UserInfo",
+      "item": [
+        {
+          "name": "Token Introspection",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/:realm/protocol/openid-connect/token/introspect?token={{accessToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                ":realm",
+                "protocol",
+                "openid-connect",
+                "token",
+                "introspect"
+              ],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "realm",
+                  "value": "{{realm}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "UserInfo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/:realm/protocol/openid-connect/userinfo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                ":realm",
+                "protocol",
+                "openid-connect",
+                "userinfo"
+              ],
+              "variable": [
+                {
+                  "key": "realm",
+                  "value": "{{realm}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Token introspection and user info. Both paths are on the CSRF ignore list — no X-XSRF-TOKEN needed."
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "requests": {},
+        "exec": [
+          "// Auto-read XSRF-TOKEN cookie set by Spring's CookieCsrfTokenRepository",
+          "// and store it as a collection variable so every request can use {{xsrfToken}}.",
+          "const xsrfCookie = pm.cookies.get('XSRF-TOKEN');",
+          "if (xsrfCookie) {",
+          "    pm.collectionVariables.set('xsrfToken', decodeURIComponent(xsrfCookie));",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "realm",
+      "value": "my-realm"
+    },
+    {
+      "key": "xsrfToken",
+      "value": ""
+    }
+  ]
+}

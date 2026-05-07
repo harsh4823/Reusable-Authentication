@@ -47,7 +47,7 @@ public class RealmServiceImp implements IRealmService {
                 .anyMatch(r->r.getName().equals("ROLE_CLIENT"));
 
         if (!alreadyClient){
-            Role clientRole = roleRepository.findByNameAndRealmIsNull("ROLE_Client")
+            Role clientRole = roleRepository.findByNameAndRealmIsNull("ROLE_CLIENT")
                     .orElseThrow(()-> new RuntimeException("Role Client not seeded"));
 
             owner.getRoles().add(clientRole);

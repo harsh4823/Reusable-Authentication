@@ -39,7 +39,6 @@ public class RealmAuthServiceImp implements IRealmAuthService {
     private final IRefreshTokenService refreshTokenService;
 
     @Override
-    @Transactional
     public RealmLoginResponse login(String realmName, RealmLoginRequest request) {
         Realm realm = findRealmByName(realmName);
 
@@ -73,6 +72,7 @@ public class RealmAuthServiceImp implements IRealmAuthService {
     }
 
     @Override
+    @Transactional
     public RealmLoginResponse register(String realmName, RealmRegisterRequest request) {
         Realm realm = findRealmByName(realmName);
 

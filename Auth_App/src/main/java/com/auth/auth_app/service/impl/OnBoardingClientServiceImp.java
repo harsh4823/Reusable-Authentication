@@ -103,6 +103,7 @@ public class OnBoardingClientServiceImp implements IOnBoardingClientService {
                         .build())
                 .clientSettings(ClientSettings.builder()
                         .requireAuthorizationConsent(false)
+                        .setting("realm",request.realmName())
                         .build())
                 .build();
 

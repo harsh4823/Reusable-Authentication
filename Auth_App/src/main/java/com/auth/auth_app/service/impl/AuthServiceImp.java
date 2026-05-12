@@ -53,7 +53,6 @@ public class AuthServiceImp implements IAuthService {
 
     @Override
     public LoginResponse authenticateAndGenerateToken(LoginRequest loginRequest) {
-        // Step 1: Authenticate FIRST — throws BadCredentialsException if wrong password
         Authentication authentication = UsernamePasswordAuthenticationToken
                 .unauthenticated(loginRequest.email(), loginRequest.password());
         Authentication authenticate = authenticationManager.authenticate(authentication);
@@ -63,7 +62,7 @@ public class AuthServiceImp implements IAuthService {
             AuthUser authUser = authUserRepository.findByEmail(loginRequest.email())
                     .orElseThrow(() -> new RuntimeException("User not found after authentication"));
 
-            String jwt = authUtil.generateJWTToken(authenticate);
+            String jwt = authUtil.generateJWTToken(authUser);
             String refreshToken = refreshTokenService.createRefreshToken(authUser.getUserId()).getToken();
             tokenRepository.storeTokens(authUser.getUserId(), jwt, refreshToken);
 

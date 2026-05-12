@@ -44,22 +44,19 @@ public class AuthorizationServerConfig {
 
     @Bean
     @Order(1)
-    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain authorizationServerSecurityFilterChain(
+            HttpSecurity http,
+            RealmAwareUserDetailsService realmAwareUserDetailsService) throws Exception {
 
         OAuth2AuthorizationServerConfigurer configurer = new OAuth2AuthorizationServerConfigurer();
-
         RequestMatcher endpointsMatcher = configurer.getEndpointsMatcher();
 
         http.securityMatcher(endpointsMatcher)
-                .with(configurer, c -> c
-                        .oidc(Customizer.withDefaults())
-                )
-                .authorizeHttpRequests(auth ->
-                        auth.anyRequest().authenticated()
-                )
+                .with(configurer, c -> c.oidc(Customizer.withDefaults()))
+                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .userDetailsService(realmAwareUserDetailsService)  // ADD
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
-                );
+                        .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login")));
 
         return http.build();
     }

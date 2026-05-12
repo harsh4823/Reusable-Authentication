@@ -6,6 +6,7 @@ public record ClientRegistrationResponse(
     String clientId,
     String clientSecret,
     String clientName,
+    String realmName,
     List<String> redirectUris,
     List<String> scopes,
     List<String> grantTypes,

@@ -32,7 +32,7 @@ public class AdminServiceImp implements IAdminService {
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public ClientRegistrationResponse registerClient(ClientRegistrationRequest clientRegistrationRequest) {
+    public ClientRegistrationResponse registerClient(String realmName , ClientRegistrationRequest clientRegistrationRequest) {
         String clientId = UUID.randomUUID().toString();
         String clientSecret = UUID.randomUUID().toString();
         String encodedSecret = passwordEncoder.encode(clientSecret);
@@ -50,6 +50,7 @@ public class AdminServiceImp implements IAdminService {
                         .build())
                 .clientSettings(ClientSettings.builder()
                         .requireAuthorizationConsent(true)
+                        .setting("realm",realmName)
                         .build());
 
         clientRegistrationRequest.redirectUris().forEach(builder::redirectUri);
@@ -66,6 +67,7 @@ public class AdminServiceImp implements IAdminService {
 
         return buildResponse(client,clientSecret);
     }
+
 
     @Override
     public List<ClientRegistrationResponse> getAllClients() {
@@ -88,6 +90,7 @@ public class AdminServiceImp implements IAdminService {
                     rs.getString("client_id"),
                     "******", //  Never return the secret hash in a list API
                     rs.getString("client_name"),
+                    "realmName",
                     redirectUris,
                     scopes,
                     grantTypes,
@@ -153,11 +156,44 @@ public class AdminServiceImp implements IAdminService {
         return buildResponse(updatedClient,newClientSecret);
     }
 
+    @Override
+    public List<ClientRegistrationResponse> getClientsByRealm(String realmName) {
+        String sql = """
+        SELECT client_id, client_name, redirect_uris, scopes,
+               authorization_grant_types, client_id_issued_at, client_settings
+        FROM oauth2_registered_client
+        WHERE JSON_EXTRACT(client_settings, '$.settings.realm') = ?
+    """;
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+
+            List<String> redirectUris = new ArrayList<>(StringUtils.commaDelimitedListToSet(rs.getString("redirect_uris")));
+            List<String> scopes = new ArrayList<>(StringUtils.commaDelimitedListToSet(rs.getString("scopes")));
+            List<String> grantTypes = new ArrayList<>(StringUtils.commaDelimitedListToSet(rs.getString("authorization_grant_types")));
+            String issuedAt = rs.getTimestamp("client_id_issued_at") != null
+                    ? rs.getTimestamp("client_id_issued_at").toInstant().toString()
+                    : null;
+
+            return new ClientRegistrationResponse(
+                    rs.getString("client_id"),
+                    "*****",
+                    rs.getString("client_name"),
+                    rs.getString("client_settings"),
+                    redirectUris,
+                    scopes,
+                    grantTypes,
+                    issuedAt
+            );
+        }, realmName);
+    }
+
     private ClientRegistrationResponse buildResponse(RegisteredClient client, String clientSecret) {
+        String realmName = client.getClientSettings().getSetting("realm");
         return new ClientRegistrationResponse(
             client.getClientId(),
             clientSecret,
             client.getClientName(),
+            realmName,
             new ArrayList<>(client.getRedirectUris()),
             new ArrayList<>(client.getScopes()),
             client.getAuthorizationGrantTypes().stream()
@@ -166,7 +202,6 @@ public class AdminServiceImp implements IAdminService {
             client.getClientIdIssuedAt() != null
                 ? client.getClientIdIssuedAt().toString()
                 : Instant.now().toString()
-
         );
     }
 }

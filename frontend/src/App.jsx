@@ -4,9 +4,11 @@ import Index from './routes'
 import Login from './routes/login'
 import Register from './routes/register'
 import Onboard from './routes/onboard'
-import AuthLayout from './routes/layouts/AuthLayout'
 import Dashboard from './routes/Dashboard'
 import Profile from './routes/profile'
+import NotFound from './components/NotFound'
+import AuthLayout from './routes/layouts/AuthLayout'
+import { ProtectedRoute } from './components/auth/RouteGuard';
 
 
 function App() {
@@ -27,6 +29,8 @@ function App() {
             <Route path="/profile" element={<Profile />} />
           </Route>
         </Route>
+
+        <Route path='*' element={<NotFound/>} />
 
       </Route>  
     </Routes>

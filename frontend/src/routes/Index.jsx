@@ -1,11 +1,11 @@
-import React from 'react';
+import { Navigate } from "react-router-dom";
+import { useAuth, rootRedirectFor } from '@/lib/auth-helpers';
 
 const Index = () => {
-    return (
-        <div>
-            
-        </div>
-    );
+    const { isAuthenticated, user } = useAuth()
+
+    if (!isAuthenticated) return <Navigate to="/login" replace />
+    return <Navigate to={rootRedirectFor(user?.roles ?? [])} replace />
 };
 
 export default Index;

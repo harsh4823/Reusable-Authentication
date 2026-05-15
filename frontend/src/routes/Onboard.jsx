@@ -8,14 +8,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { PasswordInput } from '@/components/ui-extras/password-input'
-import { CopyField } from '@/components/ui-extras/copy-field'
+import { CopyField } from './../components/ui-extras/CopyField'
 import { onboardSchema, passwordStrength } from '@/lib/validators'
 import { useOnboardMutation } from '@/store/api/onboard-api'
 import { useAppDispatch } from '@/store/hooks'
 import { setCredentials } from '@/store/auth-slice'
 import { useAuth, rootRedirectFor } from '@/lib/auth-helpers'
 import { cn } from '@/lib/utils'
+import { PasswordInput } from './../components/ui-extras/PasswordInput';
 
 const STEPS = [
   { id: 1, title: 'Your Account', description: 'Create your developer profile' },

@@ -6,6 +6,7 @@ import { Provider } from 'react-redux'
 import { Toaster } from '@/components/ui/sonner'
 import { store } from '@/store'
 import App from './App'
+import './App.css'
 
 const queryClient = new QueryClient()
 

@@ -4,18 +4,18 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { Loader2, LogOut } from 'lucide-react'
-import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { PasswordInput } from '@/components/ui-extras/password-input'
-import { RoleBadge } from '@/components/ui-extras/role-badge'
 import { passwordSchema, passwordStrength, fullNameSchema } from '@/lib/validators'
 import { useAuth } from '@/lib/auth-helpers'
 import { useAppDispatch } from '@/store/hooks'
 import { logout, updateProfile } from '@/store/auth-slice'
 import { useLogoutAllMutation, useLogoutSingleMutation } from '@/store/api/auth-api'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { PasswordInput } from '@/components/ui-extras/PasswordInput'
+import { RoleBadge } from './../components/ui-extras/RoleBadge';
 
 const passwordFormSchema = z
   .object({

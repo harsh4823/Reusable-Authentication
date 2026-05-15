@@ -7,11 +7,12 @@ import { Loader2, KeyRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { PasswordInput } from '@/components/ui-extras/password-input'
-import { AvatarUpload } from '@/components/ui-extras/avatar-upload'
+import { AvatarUpload } from './../components/ui-extras/AvatarUpload'
 import { registerSchema, passwordStrength } from '@/lib/validators'
 import { useRegisterMutation } from '@/store/api/auth-api'
 import { useAuth, rootRedirectFor } from '@/lib/auth-helpers'
+import { PasswordInput } from './../components/ui-extras/PasswordInput'
+
 
 const Register = () => {
   const { isAuthenticated, user } = useAuth()

@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom'
 import { Building2, KeyRound, Layers, Plus, Sparkles, Users } from 'lucide-react'
-import { PageHeader } from '@/components/layout/page-header'
-import { StatCard } from '@/components/ui-extras/stat-card'
+import { StatCard } from './../components/ui-extras/StatCard'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-helpers'
-import { RoleBadge } from '@/components/ui-extras/role-badge'
+import { RoleBadge } from '@/components/ui-extras/RoleBadge'
+import { PageHeader } from './../components/layout/PageHeader';
 
 const Dashboard = () => {
   const { user } = useAuth()
@@ -78,9 +78,9 @@ const Dashboard = () => {
         <div className="rounded-2xl border border-border bg-card p-6">
           <h3 className="font-display text-base font-semibold">Connecting your backend</h3>
           <p className="mt-2 text-sm text-muted-foreground">This UI talks to your IAM server at:</p>
-          <code className="mt-3 block rounded-lg border border-border bg-secondary/40 px-3 py-2 text-xs">
+          <codeode className="mt-3 block rounded-lg border border-border bg-secondary/40 px-3 py-2 text-xs">
             {import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}
-          </code>
+          </codeode>
           <p className="mt-3 text-xs text-muted-foreground">
             Override via <span className="font-mono">VITE_API_BASE_URL</span> in your environment.
           </p>

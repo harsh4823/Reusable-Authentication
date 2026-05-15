@@ -12,8 +12,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuth } from '@/lib/auth-helpers'
 import { useAppDispatch } from '@/store/hooks'
 import { logout } from '@/store/auth-slice'
-import { RoleBadge } from '@/components/ui-extras/role-badge'
 import { Button } from '@/components/ui/button'
+import { RoleBadge } from '../ui-extras/RoleBadge'
 
 export function AppSidebar() {
   const { state } = useSidebar()

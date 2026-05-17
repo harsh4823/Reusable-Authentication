@@ -67,7 +67,7 @@ public class SecurityConfig {
                         .sessionFixation(SessionManagementConfigurer.SessionFixationConfigurer::changeSessionId))
                 .cors(corsConfig->corsConfig.configurationSource(request -> {
                     CorsConfiguration corsConfiguration = new CorsConfiguration();
-                    corsConfiguration.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
+                    corsConfiguration.setAllowedOrigins(Collections.singletonList("http://localhost:5173"));
                     corsConfiguration.setAllowedMethods(Collections.singletonList("*"));
                     corsConfiguration.setAllowCredentials(true);
                     corsConfiguration.setAllowedHeaders(Collections.singletonList("*"));

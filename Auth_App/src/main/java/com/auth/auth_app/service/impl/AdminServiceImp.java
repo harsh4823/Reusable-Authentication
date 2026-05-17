@@ -73,28 +73,24 @@ public class AdminServiceImp implements IAdminService {
     public List<ClientRegistrationResponse> getAllClients() {
         String sql = """
             SELECT client_id, client_name, redirect_uris, scopes,
-                   authorization_grant_types, client_id_issued_at
+                   authorization_grant_types, client_id_issued_at,
+                   JSON_UNQUOTE(JSON_EXTRACT(client_settings, '$.realm')) AS realm_name
             FROM oauth2_registered_client
-           """;
+        """;
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
-
             List<String> redirectUris = new ArrayList<>(StringUtils.commaDelimitedListToSet(rs.getString("redirect_uris")));
-            List<String> scopes = new ArrayList<>(StringUtils.commaDelimitedListToSet(rs.getString("scopes")));
-            List<String> grantTypes = new ArrayList<>(StringUtils.commaDelimitedListToSet(rs.getString("authorization_grant_types")));
+            List<String> scopes       = new ArrayList<>(StringUtils.commaDelimitedListToSet(rs.getString("scopes")));
+            List<String> grantTypes   = new ArrayList<>(StringUtils.commaDelimitedListToSet(rs.getString("authorization_grant_types")));
             String issuedAt = rs.getTimestamp("client_id_issued_at") != null
-                    ? rs.getTimestamp("client_id_issued_at").toInstant().toString()
-                    : null;
+                    ? rs.getTimestamp("client_id_issued_at").toInstant().toString() : null;
 
             return new ClientRegistrationResponse(
                     rs.getString("client_id"),
-                    "******", //  Never return the secret hash in a list API
+                    "******",
                     rs.getString("client_name"),
-                    "realmName",
-                    redirectUris,
-                    scopes,
-                    grantTypes,
-                    issuedAt
+                    rs.getString("realm_name"),   // FIX: extract from JSON
+                    redirectUris, scopes, grantTypes, issuedAt
             );
         });
     }
@@ -159,30 +155,26 @@ public class AdminServiceImp implements IAdminService {
     @Override
     public List<ClientRegistrationResponse> getClientsByRealm(String realmName) {
         String sql = """
-        SELECT client_id, client_name, redirect_uris, scopes,
-               authorization_grant_types, client_id_issued_at, client_settings
-        FROM oauth2_registered_client
-        WHERE JSON_EXTRACT(client_settings, '$.settings.realm') = ?
-    """;
+                SELECT client_id, client_name, redirect_uris, scopes,
+                       authorization_grant_types, client_id_issued_at,
+                       JSON_UNQUOTE(JSON_EXTRACT(client_settings, '$.realm')) AS realm_name
+                FROM oauth2_registered_client
+                WHERE JSON_UNQUOTE(JSON_EXTRACT(client_settings, '$.realm')) = ?
+            """;
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
-
             List<String> redirectUris = new ArrayList<>(StringUtils.commaDelimitedListToSet(rs.getString("redirect_uris")));
-            List<String> scopes = new ArrayList<>(StringUtils.commaDelimitedListToSet(rs.getString("scopes")));
-            List<String> grantTypes = new ArrayList<>(StringUtils.commaDelimitedListToSet(rs.getString("authorization_grant_types")));
+            List<String> scopes       = new ArrayList<>(StringUtils.commaDelimitedListToSet(rs.getString("scopes")));
+            List<String> grantTypes   = new ArrayList<>(StringUtils.commaDelimitedListToSet(rs.getString("authorization_grant_types")));
             String issuedAt = rs.getTimestamp("client_id_issued_at") != null
-                    ? rs.getTimestamp("client_id_issued_at").toInstant().toString()
-                    : null;
+                    ? rs.getTimestamp("client_id_issued_at").toInstant().toString() : null;
 
             return new ClientRegistrationResponse(
                     rs.getString("client_id"),
-                    "*****",
+                    "******",
                     rs.getString("client_name"),
-                    rs.getString("client_settings"),
-                    redirectUris,
-                    scopes,
-                    grantTypes,
-                    issuedAt
+                    rs.getString("realm_name"),  // FIX: extracted field, not raw JSON
+                    redirectUris, scopes, grantTypes, issuedAt
             );
         }, realmName);
     }

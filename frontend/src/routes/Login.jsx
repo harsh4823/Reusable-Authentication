@@ -14,6 +14,7 @@ import { useAppDispatch } from '@/store/hooks'
 import { setCredentials } from '@/store/auth-slice'
 import { useAuth, rootRedirectFor } from '@/lib/auth-helpers'
 import { GOOGLE_OAUTH_URL } from '@/store/axios-instance'
+import { decodeToken } from './../lib/token-utils';
 
 const Login = () => {
   const { isAuthenticated, user } = useAuth()
@@ -31,11 +32,16 @@ const Login = () => {
   const onSubmit = async (values) => {
     try {
       const res = await login({ email: values.email, password: values.password }).unwrap()
+      const claims = decodeToken(res.accessToken)
       dispatch(
         setCredentials({
           accessToken: res.accessToken,
           refreshToken: res.refreshToken,
-          user: { ...res.user, roles: res.user.roles ?? [] },
+          user: {
+            email: claims?.email,
+            roles: claims?.authorities?.split(',') ?? [],
+            realm: claims?.realm
+          },
         })
       )
       toast.success('Welcome back')

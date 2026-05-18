@@ -1,6 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
 import RootLayout from './routes/layouts/RootLayout'
-import Index from './routes'
 import Login from './routes/login'
 import Register from './routes/register'
 import Onboard from './routes/onboard'
@@ -9,6 +8,7 @@ import Profile from './routes/profile'
 import NotFound from './components/NotFound'
 import AuthLayout from './routes/layouts/AuthLayout'
 import { ProtectedRoute } from './components/auth/RouteGuard';
+import Index from './routes/Index'
 
 
 function App() {

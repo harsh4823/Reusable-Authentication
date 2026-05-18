@@ -8,9 +8,6 @@ export const onboardApi = createApi({
     onboard: builder.mutation({
       query: (body) => ({ url: '/onboard', method: 'POST', data: body }),
     }),
-    checkRealmAvailability: builder.query({
-      query: (name) => ({ url: '/onboard/realm-available', params: { name } }),
-    }),
   }),
 })
 

@@ -61,8 +61,6 @@ public class SecurityConfig {
                             log.error("Oauth2 error : {}", exception.getMessage());
                         })
                         .successHandler(oauth2SuccessHandler))
-                .httpBasic(hbc-> hbc.authenticationEntryPoint(new CustomAuthenticationEntryPoint()))
-//                .exceptionHandling(ehc -> ehc.authenticationEntryPoint(new CustomAuthenticationEntryPoint()))
                 .sessionManagement(session -> session
                         .sessionFixation(SessionManagementConfigurer.SessionFixationConfigurer::changeSessionId))
                 .cors(corsConfig->corsConfig.configurationSource(request -> {

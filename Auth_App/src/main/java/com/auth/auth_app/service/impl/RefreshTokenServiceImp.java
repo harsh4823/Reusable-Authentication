@@ -23,6 +23,7 @@ public class RefreshTokenServiceImp implements IRefreshTokenService {
     @Override
     @Transactional
     public RefreshToken createRefreshToken(Long userId) {
+        refreshTokenRepository.deleteByAuthUser_UserId(userId);
         AuthUser authUser = authUserRepository.findById(userId)
                 .orElseThrow(()->new RuntimeException("User not found"));
 

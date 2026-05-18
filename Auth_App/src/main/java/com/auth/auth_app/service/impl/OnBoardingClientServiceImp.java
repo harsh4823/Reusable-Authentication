@@ -59,7 +59,7 @@ public class OnBoardingClientServiceImp implements IOnBoardingClientService {
 
         AuthUser owner = AuthUser.builder()
                 .email(request.email())
-                .name(request.name())
+                .name(request.fullName())
                 .password(passwordEncoder.encode(request.password()))
                 .enabled(true)
                 .roles(new HashSet<>(Set.of(userRole)))

@@ -3,9 +3,13 @@ package com.auth.auth_app.controller;
 import com.auth.auth_app.util.AuthUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.security.PublicKey;
+import java.math.BigInteger;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,20 +60,33 @@ public class OidcDiscoveryController {
 
     @GetMapping("/{realm}/protocol/openid-connect/certs")
     public ResponseEntity<Map<String, Object>> jwks(@PathVariable String realm) {
-        PublicKey publicKey = authUtil.getPublicKey();
+        RSAPublicKey rsaPublicKey = (RSAPublicKey) authUtil.getPublicKey();
 
-        String base64Key = Base64.getUrlEncoder()
-                .withoutPadding()
-                .encodeToString(publicKey.getEncoded());
+        String n = Base64.getUrlEncoder()
+                .withoutPadding().encodeToString(toUnsignedBytes(rsaPublicKey.getModulus()));
+
+        String e = Base64.getUrlEncoder()
+                .withoutPadding().encodeToString(toUnsignedBytes(rsaPublicKey.getPublicExponent()));
 
         Map<String, Object> key = new LinkedHashMap<>();
         key.put("kty", "RSA");          // Key type
         key.put("use", "sig");          // Usage: signature verification
         key.put("alg", "RS256");        // Algorithm
         key.put("kid", "auth-app-key"); // Key ID — clients use this to pick the right key
-        key.put("n", base64Key);        // The actual public key material
+        key.put("n", n);                // The actual public key material
+        key.put("e", e);
 
         Map<String, Object> jwks = Map.of("keys", List.of(key));
         return ResponseEntity.ok(jwks);
+    }
+
+    private byte[] toUnsignedBytes(BigInteger value) {
+        byte[] bytes = value.toByteArray();
+        if (bytes[0] == 0) {
+            byte[] trimmed = new byte[bytes.length - 1];
+            System.arraycopy(bytes, 1, trimmed, 0, trimmed.length);
+            return trimmed;
+        }
+        return bytes;
     }
 }

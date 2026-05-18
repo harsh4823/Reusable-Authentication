@@ -44,6 +44,13 @@ public class TokenIntrospectionController {
                     .parseSignedClaims(token)
                     .getPayload();
 
+            String tokenRealm = claims.get("realm", String.class);
+            if (tokenRealm != null && !tokenRealm.equals(realm) && !tokenRealm.equals("master")) {
+                response.put("active", false);
+                response.put("reason", "Token realm mismatch");
+                return ResponseEntity.ok(response);
+            }
+
             if (claims.getExpiration().before(new Date())){
                 response.put("active",false);
                 response.put("reason","Token has been expired");

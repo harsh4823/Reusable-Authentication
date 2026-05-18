@@ -3,6 +3,7 @@ package com.auth.auth_app.config;
 import com.auth.auth_app.entity.AuthUser;
 import com.auth.auth_app.repository.AuthUserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Primary
 public class CustomUserDetailService implements UserDetailsService {
 
     private final AuthUserRepository authUserRepository;

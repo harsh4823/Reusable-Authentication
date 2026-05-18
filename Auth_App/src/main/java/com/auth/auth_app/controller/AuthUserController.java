@@ -1,6 +1,5 @@
 package com.auth.auth_app.controller;
 
-import com.auth.auth_app.constant.ApplicationConstant;
 import com.auth.auth_app.entity.AuthUser;
 import com.auth.auth_app.entity.RefreshToken;
 import com.auth.auth_app.model.AuthUserDto;
@@ -9,35 +8,23 @@ import com.auth.auth_app.model.LoginResponse;
 import com.auth.auth_app.repository.AuthUserRepository;
 import com.auth.auth_app.repository.TokenRepository;
 import com.auth.auth_app.service.IAuthService;
-import com.auth.auth_app.service.ICloudinaryService;
 import com.auth.auth_app.service.IRefreshTokenService;
-import com.auth.auth_app.service.impl.RefreshTokenServiceImp;
 import com.auth.auth_app.util.AuthUtil;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -55,7 +42,7 @@ public class AuthUserController {
         try{
         LoginResponse loginResponse = authService.authenticateAndGenerateToken(loginRequest);
 
-        return ResponseEntity.status(HttpStatus.OK).header(ApplicationConstant.JWT_HEADER,loginResponse.jwtToken())
+        return ResponseEntity.status(HttpStatus.OK).header("Authorization",loginResponse.accessToken())
                 .body(loginResponse);
         }catch (Exception e){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

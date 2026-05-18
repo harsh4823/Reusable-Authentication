@@ -13,7 +13,7 @@ public record OnboardingRequest(
         String password,
 
         @NotBlank(message = "Name is required")
-        String name,
+        String fullName,
 
         @NotBlank(message = "App name is required")
         String appName,

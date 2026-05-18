@@ -108,10 +108,8 @@ public class RealmUserServiceImp implements IRealmUserService {
     }
 
     private AuthUser findUserInRealm(Realm realm, Long userId) {
-        return realm.getMembers().stream()
-                .filter(user -> user.getUserId().equals(userId))
-                .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("User","UserId",userId.toString()));
+        return authUserRepository.findByUserIdAndMemberRealm(userId,realm)
+                .orElseThrow(() -> new ResourceNotFoundException("User","userId",userId.toString()));
     }
 
     private RealmUserResponse buildResponse(AuthUser authUser) {

@@ -1,9 +1,14 @@
 package com.auth.auth_app.repository;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Repository;
 
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -47,8 +52,8 @@ public class TokenRepository {
     }
 
     public void removeAllTokens(Long userId) {
-        Set<String> accessKeys = redisTemplate.keys(ACCESS_TOKEN_KEY_PREFIX + userId + ":*");
-        Set<String> refreshKeys = redisTemplate.keys(REFRESH_TOKEN_KEY_PREFIX + userId + ":*");
+        Set<String> accessKeys = scanKeys(ACCESS_TOKEN_KEY_PREFIX + userId + ":*");
+        Set<String> refreshKeys = scanKeys(REFRESH_TOKEN_KEY_PREFIX + userId + ":*");
 
         if (accessKeys != null && !accessKeys.isEmpty()) {
             for (String key : accessKeys) {
@@ -78,5 +83,16 @@ public class TokenRepository {
     public boolean isRefreshTokenBlacklisted(String token) {
         String key = REFRESH_BLACKLIST_PREFIX + token;
         return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+    }
+
+    private Set<String> scanKeys(String pattern) {
+        return redisTemplate.execute((RedisConnection conn) -> {
+            Set<String> keys = new HashSet<>();
+            Cursor<byte[]> cursor = conn.scan(
+                    ScanOptions.scanOptions().match(pattern).count(100).build()
+            );
+            cursor.forEachRemaining(k -> keys.add(new String(k, StandardCharsets.UTF_8)));
+            return keys;
+        });
     }
 }

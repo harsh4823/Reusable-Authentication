@@ -12,7 +12,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -32,7 +31,7 @@ public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
 
         try {
             LoginResponse loginResponse = authService.handleOAuth2LoginRequest(user,registrationId);
-            String jwt = loginResponse.jwtToken();
+            String jwt = loginResponse.accessToken();
             Cookie jwtCookie = new Cookie("jwt", jwt);
             jwtCookie.setHttpOnly(true);     // Prevents JavaScript (XSS) from reading the token
             jwtCookie.setSecure(false);      // Set to true in production when using HTTPS

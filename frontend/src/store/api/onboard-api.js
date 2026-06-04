@@ -8,7 +8,18 @@ export const onboardApi = createApi({
     onboard: builder.mutation({
       query: (body) => ({ url: '/onboard', method: 'POST', data: body }),
     }),
+
+    checkEmailAvailability: builder.query({
+      query: (email) => ({
+        url: '/onboard/availability/email',
+        method: 'GET',
+        params: { email },
+      }),
+    }),
   }),
 })
 
-export const { useOnboardMutation, useLazyCheckRealmAvailabilityQuery } = onboardApi
+export const {
+  useOnboardMutation,
+  useLazyCheckEmailAvailabilityQuery,
+} = onboardApi

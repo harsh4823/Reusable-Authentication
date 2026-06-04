@@ -17,4 +17,6 @@ public interface AuthUserRepository extends JpaRepository<AuthUser, Long> {
     Page<AuthUser> findByMemberRealm(Realm memberRealm, Pageable pageable);
 
     Optional<AuthUser> findByUserIdAndMemberRealm(Long userId, Realm realm);
+
+    boolean existsByEmailIgnoreCase(String email);
 }

@@ -9,5 +9,5 @@ public record OnboardingResponse (
    String accessToken,
    String refreshToken,
    String wellKnownUrl,
-   String tokenEndPoint
+   String tokenEndpoint
 ) {}

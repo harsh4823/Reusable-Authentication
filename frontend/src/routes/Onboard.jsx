@@ -10,12 +10,15 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { CopyField } from './../components/ui-extras/CopyField'
 import { onboardSchema, passwordStrength } from '@/lib/validators'
-import { useOnboardMutation } from '@/store/api/onboard-api'
 import { useAppDispatch } from '@/store/hooks'
 import { setCredentials } from '@/store/auth-slice'
 import { useAuth, rootRedirectFor } from '@/lib/auth-helpers'
 import { cn } from '@/lib/utils'
 import { PasswordInput } from './../components/ui-extras/PasswordInput';
+import {
+  useOnboardMutation,
+  useLazyCheckEmailAvailabilityQuery,
+} from '@/store/api/onboard-api'
 
 const STEPS = [
   { id: 1, title: 'Your Account', description: 'Create your developer profile' },
@@ -23,11 +26,14 @@ const STEPS = [
   { id: 3, title: 'Review & Launch', description: 'Confirm and go live' },
 ]
 
+
+
 const Onboard = () => {
   const { isAuthenticated, user } = useAuth()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const [onboard, { isLoading }] = useOnboardMutation()
+ const [onboard, { isLoading }] = useOnboardMutation()
+ const [checkEmailAvailability] = useLazyCheckEmailAvailabilityQuery()
   const [step, setStep] = useState(1)
   const [acknowledged, setAcknowledged] = useState(false)
   const [credentials, setCredentialsState] = useState(null)
@@ -56,13 +62,35 @@ const Onboard = () => {
   }
 
   const goNext = async () => {
-    const fields = {
-      1: ['fullName', 'email', 'password', 'confirmPassword'],
-      2: ['appName', 'realmName', 'redirectUri'],
-    }
-    const ok = await form.trigger(fields[step])
-    if (ok) setStep((s) => Math.min(3, s + 1))
+  const fields = {
+    1: ['fullName', 'email', 'password', 'confirmPassword'],
+    2: ['appName', 'realmName', 'redirectUri'],
   }
+
+  const ok = await form.trigger(fields[step])
+  if (!ok) return
+
+  if (step === 1) {
+    try {
+      const email = form.getValues('email').trim()
+      await checkEmailAvailability(email).unwrap()
+    } catch (err) {
+      if (err?.status === 409) {
+        form.setError('email', {
+          type: 'server',
+          message: 'An account with this email already exists',
+        })
+        toast.error('This email is already registered')
+        return
+      }
+
+      toast.error('Could not verify email availability')
+      return
+    }
+  }
+
+  setStep((s) => Math.min(3, s + 1))
+}
 
   const onLaunch = async () => {
     const valid = await form.trigger()
@@ -81,6 +109,13 @@ const Onboard = () => {
         realmName: v.realmName,
         redirectUri: v.redirectUri,
       }).unwrap()
+
+      if (!res?.clientId || !res?.clientSecret) {
+        setCredentialsState(null)
+        toast.error('Onboarding failed: client credentials were not generated')
+        return
+      }
+      
       setCredentialsState(res)
       dispatch(
         setCredentials({

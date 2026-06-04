@@ -12,6 +12,8 @@ import { registerSchema, passwordStrength } from '@/lib/validators'
 import { useRegisterMutation } from '@/store/api/auth-api'
 import { useAuth, rootRedirectFor } from '@/lib/auth-helpers'
 import { PasswordInput } from './../components/ui-extras/PasswordInput'
+import { GOOGLE_OAUTH_URL } from '@/store/axios-instance'
+import { GoogleIcon } from './../components/auth/GoogleIcon';
 
 
 const Register = () => {
@@ -117,6 +119,21 @@ const Register = () => {
               Create Account
             </Button>
           </form>
+
+          <div className="my-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">
+              or continue with
+            </span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          <Button variant="secondary" className="w-full" asChild>
+            <a href={GOOGLE_OAUTH_URL}>
+              <GoogleIcon className="mr-2 h-4 w-4" />
+              Continue with Google
+            </a>
+          </Button>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{' '}

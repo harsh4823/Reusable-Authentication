@@ -1,5 +1,6 @@
 package com.auth.auth_app.service.impl;
 
+import com.auth.auth_app.Exception.ResourceAlreadyExistsException;
 import com.auth.auth_app.entity.AuthUser;
 import com.auth.auth_app.entity.Realm;
 import com.auth.auth_app.entity.Role;
@@ -47,11 +48,11 @@ public class OnBoardingClientServiceImp implements IOnBoardingClientService {
     public OnboardingResponse onboard(OnboardingRequest request) {
 
         if (authUserRepository.findByEmail(request.email()).isPresent()){
-            throw new RuntimeException("Email already exists : " + request.email());
+            throw new ResourceAlreadyExistsException("Email already exists : " + request.email());
         }
 
         if (realmRepository.existsByRealmName(request.realmName())){
-            throw new RuntimeException("Realm name already exists : " + request.realmName());
+            throw new ResourceAlreadyExistsException("Realm name already exists : " + request.realmName());
         }
 
         Role userRole = roleRepository.findByNameAndRealmIsNull("ROLE_CLIENT")

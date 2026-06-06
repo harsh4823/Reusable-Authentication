@@ -15,7 +15,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import java.security.interfaces.RSAPrivateKey;
@@ -31,7 +30,9 @@ public class AuthorizationServerConfig {
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(
             HttpSecurity http,
-            RealmAwareUserDetailsService realmAwareUserDetailsService) throws Exception {
+            RealmAwareUserDetailsService realmAwareUserDetailsService,
+            LoginAuthenticationEntryPoint loginAuthenticationEntryPoint
+            ) throws Exception {
 
         OAuth2AuthorizationServerConfigurer configurer = new OAuth2AuthorizationServerConfigurer();
         RequestMatcher endpointsMatcher = configurer.getEndpointsMatcher();
@@ -41,7 +42,7 @@ public class AuthorizationServerConfig {
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                 .userDetailsService(realmAwareUserDetailsService)  // ADD
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login")));
+                        .authenticationEntryPoint(loginAuthenticationEntryPoint));
 
         return http.build();
     }

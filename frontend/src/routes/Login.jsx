@@ -1,7 +1,6 @@
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { toast } from 'sonner'
 import { KeyRound, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,14 +13,17 @@ import { useAppDispatch } from '@/store/hooks'
 import { setCredentials } from '@/store/auth-slice'
 import { useAuth, rootRedirectFor } from '@/lib/auth-helpers'
 import { GOOGLE_OAUTH_URL } from '@/store/axios-instance'
-import { decodeToken } from './../lib/token-utils';
 import { GoogleIcon } from './../components/auth/GoogleIcon';
+import { useSearchParams } from 'react-router-dom'
+import { axiosInstance } from '@/store/axios-instance'
 
 const Login = () => {
   const { isAuthenticated, user } = useAuth()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const [login, { isLoading }] = useLoginMutation()
+  const [searchParams] = useSearchParams()
+  const continueUrl = searchParams.get('continue')
 
   const form = useForm({
     resolver: zodResolver(loginSchema),
@@ -31,31 +33,36 @@ const Login = () => {
   if (isAuthenticated) return <Navigate to={rootRedirectFor(user?.roles ?? [])} replace />
 
   const onSubmit = async (values) => {
-    try {
-      const res = await login({ email: values.email, password: values.password }).unwrap()
-      const claims = decodeToken(res.accessToken)
-      dispatch(
-        setCredentials({
-          accessToken: res.accessToken,
-          refreshToken: res.refreshToken,
-          user: {
-            email: claims?.email,
-            roles: claims?.authorities?.split(',') ?? [],
-            realm: claims?.realm
-          },
-        })
-      )
-      toast.success('Welcome back')
-      navigate(rootRedirectFor(res.user.roles ?? []))
-    } catch (err) {
-      const status = err?.status
-      if (status === 401) {
-        form.setError('password', { message: 'Invalid email or password' })
-      } else {
-        toast.error('Something went wrong, try again')
-      }
+  try {
+    await axiosInstance.post('/auth/session-login', {
+      email: values.email,
+      password: values.password,
+    })
+
+    if (continueUrl) {
+      window.location.replace(decodeURIComponent(continueUrl))
+      return
     }
+
+    // normal dashboard login fallback
+    const res = await login({
+      email: values.email,
+      password: values.password,
+    }).unwrap()
+
+    dispatch(setCredentials({
+      accessToken: res.accessToken,
+      refreshToken: res.refreshToken,
+      user: res.user,
+    }))
+
+    navigate(rootRedirectFor(res.user.roles ?? []))
+  } catch (err) {
+    form.setError('password', {
+      message: 'Invalid email or password',
+    })
   }
+}
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-4">

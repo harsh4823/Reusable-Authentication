@@ -43,6 +43,16 @@ const authSlice = createSlice({
         localStorage.setItem('user', JSON.stringify(finalUser))
       }
     },
+    setSessionUser: (state, action) => {
+      state.user = action.payload
+      state.accessToken = null
+      state.refreshToken = null
+      state.isAuthenticated = true
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user', JSON.stringify(action.payload))
+      }
+    },
     updateAccessToken: (state, action) => {
       state.accessToken = action.payload
       setStoredTokens(action.payload, state.refreshToken)
@@ -64,5 +74,12 @@ const authSlice = createSlice({
   },
 })
 
-export const { setCredentials, updateAccessToken, updateProfile, logout } = authSlice.actions
+export const {
+  setCredentials,
+  setSessionUser,
+  updateAccessToken,
+  updateProfile,
+  logout
+} = authSlice.actions
+
 export default authSlice.reducer

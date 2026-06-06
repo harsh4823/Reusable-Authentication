@@ -8,6 +8,7 @@ export const authApi = createApi({
     login: builder.mutation({
       query: (body) => ({ url: '/auth/login', method: 'POST', data: body }),
     }),
+
     register: builder.mutation({
       query: (formData) => ({
         url: '/auth/register',
@@ -16,12 +17,22 @@ export const authApi = createApi({
         headers: { 'Content-Type': 'multipart/form-data' },
       }),
     }),
+
+    me: builder.query({
+      query: () => ({
+        url: '/auth/me',
+        method: 'GET',
+      }),
+    }),
+
     refresh: builder.mutation({
       query: (body) => ({ url: '/auth/refresh', method: 'POST', data: body }),
     }),
+
     logoutSingle: builder.mutation({
       query: () => ({ url: '/auth/logout/single', method: 'POST' }),
     }),
+
     logoutAll: builder.mutation({
       query: () => ({ url: '/auth/logout/all', method: 'POST' }),
     }),
@@ -31,6 +42,8 @@ export const authApi = createApi({
 export const {
   useLoginMutation,
   useRegisterMutation,
+  useMeQuery,
+  useLazyMeQuery,
   useRefreshMutation,
   useLogoutSingleMutation,
   useLogoutAllMutation,

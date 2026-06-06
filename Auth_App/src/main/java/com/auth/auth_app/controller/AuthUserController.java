@@ -2,6 +2,7 @@ package com.auth.auth_app.controller;
 
 import com.auth.auth_app.entity.AuthUser;
 import com.auth.auth_app.entity.RefreshToken;
+import com.auth.auth_app.entity.Role;
 import com.auth.auth_app.model.AuthUserDto;
 import com.auth.auth_app.model.LoginRequest;
 import com.auth.auth_app.model.LoginResponse;
@@ -136,8 +137,33 @@ public class AuthUserController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    @GetMapping("/hello")
-    public String hello(){
-        return "Hello World";
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser() {
+        Object principal = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getPrincipal();
+
+        if (principal == null || "anonymousUser".equals(principal)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String email = principal.toString();
+
+        AuthUser authUser = authUserRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("email", authUser.getEmail());
+        response.put("name", authUser.getName());
+        response.put("roles", authUser.getRoles()
+                .stream()
+                .map(Role::getName)
+                .toList());
+
+        response.put("realm", authUser.getMemberRealm() != null
+                ? authUser.getMemberRealm().getRealmName()
+                : "master");
+
+        return ResponseEntity.ok(response);
     }
 }

@@ -8,6 +8,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -15,13 +16,15 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 
 @Component
 @RequiredArgsConstructor
 public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final IAuthService authService;
+
+    @Value("${app.frontend.base-url}")
+    private String frontendUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -47,17 +50,7 @@ public class Oauth2SuccessHandler implements AuthenticationSuccessHandler {
             refreshCookie.setMaxAge(7 * 24 * 60 * 60); // 7 days in seconds
             response.addCookie(refreshCookie);
 
-            response.setStatus(HttpServletResponse.SC_OK);
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-
-            PrintWriter writer = response.getWriter();
-            writer.write("{\n");
-            writer.write("  \"status\": \"Success\",\n");
-            writer.write("  \"message\": \"OAuth2 Login Successful! The JWT cookie has been set.\",\n");
-            writer.write("  \"token\": \"" + jwt + "\"\n"); // Showing the token just for testing visibility
-            writer.write("}");
-            writer.flush();
+            response.sendRedirect(frontendUrl + "/oauth/success");
         } catch (Oauth2MissingEmailException e) {
             throw new RuntimeException(e);
         }

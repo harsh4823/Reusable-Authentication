@@ -14,6 +14,9 @@ import { useAppDispatch } from '@/store/hooks'
 import { logout } from '@/store/auth-slice'
 import { Button } from '@/components/ui/button'
 import { RoleBadge } from '../ui-extras/RoleBadge'
+import { useNavigate } from 'react-router-dom'
+import { useLogoutSingleMutation } from '@/store/api/auth-api'
+import { authApi } from '@/store/api/auth-api'
 
 export function AppSidebar() {
   const { state } = useSidebar()
@@ -24,6 +27,8 @@ export function AppSidebar() {
   const roles = user?.roles ?? []
   const isAdmin = roles.includes('ROLE_ADMIN')
   const isClient = roles.includes('ROLE_CLIENT') || isAdmin
+  const navigate = useNavigate()
+  const [logoutSingle] = useLogoutSingleMutation()
 
   const isActive = (p) => pathname === p || pathname.startsWith(p + '/')
 
@@ -126,7 +131,17 @@ export function AppSidebar() {
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              onClick={() => dispatch(logout())}
+              onClick={async () => {
+                try {
+                  await logoutSingle().unwrap()
+                } catch {
+                  // still clear frontend state even if backend logout fails
+                }
+
+                dispatch(logout())
+                dispatch(authApi.util.resetApiState())
+                navigate('/login', { replace: true })
+              }}
               aria-label="Log out"
             >
               <LogOut className="h-4 w-4" />

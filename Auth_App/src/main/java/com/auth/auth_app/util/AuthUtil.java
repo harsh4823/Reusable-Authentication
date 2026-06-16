@@ -196,11 +196,13 @@ public class AuthUtil {
         clearJwtCookie.setPath("/");
         clearJwtCookie.setHttpOnly(true);
         clearJwtCookie.setMaxAge(0);
+//        clearJwtCookie.setSecure(true);  prod
 
         Cookie clearRefreshCookie = new Cookie("refreshToken", null);
-        clearRefreshCookie.setPath("/api/auth/refresh");
+        clearRefreshCookie.setPath("/");
         clearRefreshCookie.setHttpOnly(true);
         clearRefreshCookie.setMaxAge(0);
+//        clearRefreshCookie.setSecure(true); // prod
 
         response.addCookie(clearJwtCookie);
         response.addCookie(clearRefreshCookie);

@@ -1,18 +1,17 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Navigate, Outlet } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useEffect } from 'react'
-import { useAuth } from '@/lib/auth-helpers'
+import { useAuth, rootRedirectFor } from '@/lib/auth-helpers'
 import { useMeQuery } from '@/store/api/auth-api'
 import { useAppDispatch } from '@/store/hooks'
 import { setSessionUser } from '@/store/auth-slice'
 
-export function ProtectedRoute() {
-  const { isAuthenticated } = useAuth()
-  const location = useLocation()
+export function GuestRoute() {
+  const { isAuthenticated, user: reduxUser } = useAuth()
   const dispatch = useAppDispatch()
 
   const {
-    data: user,
+    data: cookieUser,
     isLoading,
     isError,
   } = useMeQuery(undefined, {
@@ -20,13 +19,13 @@ export function ProtectedRoute() {
   })
 
   useEffect(() => {
-    if (user) {
-      dispatch(setSessionUser(user))
+    if (cookieUser) {
+      dispatch(setSessionUser(cookieUser))
     }
-  }, [user, dispatch])
+  }, [cookieUser, dispatch])
 
   if (isAuthenticated) {
-    return <Outlet />
+    return <Navigate to={rootRedirectFor(reduxUser?.roles ?? [])} replace />
   }
 
   if (isLoading) {
@@ -37,12 +36,12 @@ export function ProtectedRoute() {
     )
   }
 
-  if (user) {
-    return <Outlet />
+  if (cookieUser) {
+    return <Navigate to={rootRedirectFor(cookieUser.roles ?? [])} replace />
   }
 
   if (isError) {
-    return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />
+    return <Outlet />
   }
 
   return null

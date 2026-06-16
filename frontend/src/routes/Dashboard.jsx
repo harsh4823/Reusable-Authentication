@@ -5,6 +5,12 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-helpers'
 import { RoleBadge } from '@/components/ui-extras/RoleBadge'
 import { PageHeader } from './../components/layout/PageHeader';
+import {
+  useGetRealmQuery,
+  useGetRealmUsersQuery,
+  useGetRealmRolesQuery,
+  useGetRealmClientsQuery,
+} from '@/store/api/realm-api'
 
 const Dashboard = () => {
   const { user } = useAuth()
@@ -13,6 +19,21 @@ const Dashboard = () => {
   const isClient = roles.includes('ROLE_CLIENT') || isAdmin
   const hasRealm = Boolean(user?.realm)
   const firstName = (user?.name || '').split(' ')[0] || 'there'
+  const realmName = user?.realm
+  const shouldLoadRealmData = Boolean(isClient && realmName)
+  const { data: realm, isLoading: realmLoading } = useGetRealmQuery(realmName, {
+    skip: !shouldLoadRealmData,
+  })
+  const { data: usersPage } = useGetRealmUsersQuery(
+    { realmName, page: 0, size: 1 },
+    { skip: !shouldLoadRealmData }
+  )
+  const { data: realmRoles = [] } = useGetRealmRolesQuery(realmName, {
+    skip: !shouldLoadRealmData,
+  })
+  const { data: clients = [] } = useGetRealmClientsQuery(realmName, {
+    skip: !shouldLoadRealmData,
+  })
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8">
@@ -53,13 +74,33 @@ const Dashboard = () => {
       )}
 
       {isClient && (
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard icon={Building2} label="Realms owned" value="—" trend="Connect backend to load" />
-          <StatCard icon={Users} label="Total users" value="—" />
-          <StatCard icon={KeyRound} label="Roles defined" value="—" />
-          <StatCard icon={Layers} label="OAuth2 clients" value="—" />
-        </div>
-      )}
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          icon={Building2}
+          label="Realm"
+          value={realmLoading ? 'Loading...' : realm?.realmName ?? realmName ?? '—'}
+          trend={realm?.displayName ?? 'Your tenant'}
+        />
+
+        <StatCard
+          icon={Users}
+          label="Total users"
+          value={usersPage?.totalElements ?? 0}
+        />
+
+        <StatCard
+          icon={KeyRound}
+          label="Roles defined"
+          value={realmRoles.length}
+        />
+
+        <StatCard
+          icon={Layers}
+          label="OAuth2 clients"
+          value={clients.length}
+        />
+      </div>
+    )}
 
       <div className="mt-8 grid gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border border-border bg-card p-6">
@@ -78,9 +119,9 @@ const Dashboard = () => {
         <div className="rounded-2xl border border-border bg-card p-6">
           <h3 className="font-display text-base font-semibold">Connecting your backend</h3>
           <p className="mt-2 text-sm text-muted-foreground">This UI talks to your IAM server at:</p>
-          <codeode className="mt-3 block rounded-lg border border-border bg-secondary/40 px-3 py-2 text-xs">
+          <code className="mt-3 block rounded-lg border border-border bg-secondary/40 px-3 py-2 text-xs">
             {import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}
-          </codeode>
+          </code>
           <p className="mt-3 text-xs text-muted-foreground">
             Override via <span className="font-mono">VITE_API_BASE_URL</span> in your environment.
           </p>

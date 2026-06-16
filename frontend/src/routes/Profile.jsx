@@ -16,6 +16,8 @@ import { useLogoutAllMutation, useLogoutSingleMutation } from '@/store/api/auth-
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PasswordInput } from '@/components/ui-extras/PasswordInput'
 import { RoleBadge } from './../components/ui-extras/RoleBadge';
+import { useNavigate } from 'react-router-dom'
+import { authApi } from '@/store/api/auth-api'
 
 const passwordFormSchema = z
   .object({
@@ -36,6 +38,7 @@ const Profile = () => {
   const [logoutSingle, { isLoading: lo1 }] = useLogoutSingleMutation()
   const [logoutAll, { isLoading: lo2 }] = useLogoutAllMutation()
   const [confirmAll, setConfirmAll] = useState(false)
+  const navigate = useNavigate()
 
   const nameForm = useForm({
     resolver: zodResolver(nameFormSchema),
@@ -68,24 +71,30 @@ const Profile = () => {
   }
 
   const onLogoutSingle = async () => {
-    try {
-      await logoutSingle().unwrap()
-    } catch {
-      /* fall through to local logout */
-    }
-    dispatch(logout())
-    toast.success('Logged out from this device')
+  try {
+    await logoutSingle().unwrap()
+  } catch {
+    // fall through to local logout
   }
 
+  dispatch(logout())
+  dispatch(authApi.util.resetApiState())
+  toast.success('Logged out from this device')
+  navigate('/login', { replace: true })
+}
+
   const onLogoutAll = async () => {
-    try {
-      await logoutAll().unwrap()
-    } catch {
-      /* fall through */
-    }
-    dispatch(logout())
-    toast.success('Logged out from all devices')
+  try {
+    await logoutAll().unwrap()
+  } catch {
+    // fall through
   }
+
+  dispatch(logout())
+  dispatch(authApi.util.resetApiState())
+  toast.success('Logged out from all devices')
+  navigate('/login', { replace: true })
+}
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">

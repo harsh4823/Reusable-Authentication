@@ -10,6 +10,7 @@ import AuthLayout from './routes/layouts/AuthLayout'
 import { ProtectedRoute } from './components/auth/RouteGuard';
 import Index from './routes/Index'
 import OAuthSuccess from './routes/OAuthSuccess';
+import { GuestRoute } from './routes/GuestRoute';
 
 
 function App() {
@@ -19,8 +20,11 @@ function App() {
 
         {/* Public routes */}
         <Route path="/" element={<Index />} />
+
+        <Route element={<GuestRoute />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        </Route>
         <Route path="/onboard" element={<Onboard />} />
         <Route path="/oauth/success" element={<OAuthSuccess />} />
 

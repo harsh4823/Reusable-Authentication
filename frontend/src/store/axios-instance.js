@@ -32,10 +32,19 @@ export function setStoredTokens(accessToken, refreshToken) {
 }
 
 export function clearStoredAuth() {
-  if (typeof window === 'undefined') return
-  localStorage.removeItem(TOKEN_KEY)
-  localStorage.removeItem(REFRESH_KEY)
-  localStorage.removeItem('user')
+  if (typeof window === 'undefined') return;
+  
+  // 1. Wipe persistent storage
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('user');
+
+  // 2. ALGORITHM: In-Memory Token Purge
+  // Erase the zombie token from Axios global memory so subsequent 
+  // background fetches (like GuestRoute's useMeQuery) fail cleanly.
+  if (axiosInstance.defaults.headers.common['Authorization']) {
+    delete axiosInstance.defaults.headers.common['Authorization'];
+  }
 }
 
 // Request interceptor — attach Bearer token
@@ -48,45 +57,90 @@ axiosInstance.interceptors.request.use((config) => {
   return config
 })
 
-// Response interceptor — silent refresh on 401
-let refreshPromise = null
-let onAuthFailure = null
+// Concurrency state handlers
+let isRefreshing = false;
+let failedQueue = [];
+let onAuthFailure = null;
 
 export function setAuthFailureHandler(fn) {
   onAuthFailure = fn
 }
 
-async function performRefresh() {
-  const { refreshToken } = getStoredTokens()
-  if (!refreshToken) return null
-  try {
-    const res = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken })
-    const newAccess = res.data?.accessToken
-    const newRefresh = res.data?.refreshToken ?? refreshToken
-    if (!newAccess) return null
-    setStoredTokens(newAccess, newRefresh ?? null)
-    return newAccess
-  } catch {
-    return null
-  }
-}
-
-axiosInstance.interceptors.response.use(
-  (r) => r,
-  async (error) => {
-    const original = error.config
-    if (error.response?.status === 401 && original && !original._retry) {
-      original._retry = true
-      if (!refreshPromise) refreshPromise = performRefresh().finally(() => (refreshPromise = null))
-      const newToken = await refreshPromise
-      if (newToken) {
-        original.headers = original.headers ?? {}
-        original.headers.Authorization = `Bearer ${newToken}`
-        return axiosInstance(original)
-      }
-      clearStoredAuth()
-      onAuthFailure?.()
+// Promise resolver for queued requests
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
     }
-    return Promise.reject(error)
+  });
+  failedQueue = [];
+};
+
+// Response interceptor — Token Refresh Concurrency Queue
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    const status = error.response?.status;
+
+    // Intercept both 401 and 403 status codes thrown by Spring Security
+    if ((status === 401 || status === 403) && originalRequest && !originalRequest._retry) {
+      
+      // If a refresh is already in progress, suspend this request into the queue
+      if (isRefreshing) {
+        return new Promise(function(resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers['Authorization'] = `Bearer ${token}`;
+          return axiosInstance(originalRequest);
+        }).catch(err => {
+          return Promise.reject(err);
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const { refreshToken } = getStoredTokens();
+      
+      if (!refreshToken) {
+          isRefreshing = false;
+          clearStoredAuth();
+          onAuthFailure?.();
+          return Promise.reject(error);
+      }
+
+      return new Promise(async (resolve, reject) => {
+        try {
+          const res = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
+          const newAccess = res.data?.accessToken;
+          const newRefresh = res.data?.refreshToken ?? refreshToken;
+          
+          if (!newAccess) throw new Error("No access token returned");
+
+          setStoredTokens(newAccess, newRefresh);
+          
+          // Apply new token to subsequent requests and the original request
+          axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${newAccess}`;
+          originalRequest.headers['Authorization'] = `Bearer ${newAccess}`;
+          
+          // Release the queue with the new token
+          processQueue(null, newAccess);
+          resolve(axiosInstance(originalRequest));
+        } catch (refreshError) {
+          // Reject all queued requests and trigger explicit logout cascade
+          processQueue(refreshError, null);
+          clearStoredAuth();
+          onAuthFailure?.();
+          reject(refreshError);
+        } finally {
+          isRefreshing = false;
+        }
+      });
+    }
+    
+    return Promise.reject(error);
   }
-)
+);

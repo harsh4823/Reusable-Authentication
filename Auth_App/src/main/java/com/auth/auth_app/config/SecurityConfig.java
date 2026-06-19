@@ -55,6 +55,8 @@ public class SecurityConfig {
                         .requestMatchers("/admin/realms/**").hasAnyRole("ADMIN","CLIENT")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
+                .exceptionHandling(eh ->eh
+                        .authenticationEntryPoint(new CustomAuthenticationEntryPoint()))
                 .formLogin(Customizer.withDefaults())
                 .httpBasic(hbc -> hbc.authenticationEntryPoint(new CustomAuthenticationEntryPoint()))
                 .oauth2Login(oauth2->oauth2

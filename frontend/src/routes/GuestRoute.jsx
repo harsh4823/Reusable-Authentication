@@ -14,6 +14,7 @@ export function GuestRoute() {
     data: cookieUser,
     isLoading,
     isError,
+    isSuccess,
   } = useMeQuery(undefined, {
     skip: isAuthenticated,
   })
@@ -24,10 +25,12 @@ export function GuestRoute() {
     }
   }, [cookieUser, dispatch])
 
+  // Already authenticated in Redux store
   if (isAuthenticated) {
     return <Navigate to={rootRedirectFor(reduxUser?.roles ?? [])} replace />
   }
 
+  // Still fetching
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -36,13 +39,11 @@ export function GuestRoute() {
     )
   }
 
-  if (cookieUser) {
+  // Cookie session found — redirect
+  if (isSuccess && cookieUser) {
     return <Navigate to={rootRedirectFor(cookieUser.roles ?? [])} replace />
   }
 
-  if (isError) {
-    return <Outlet />
-  }
-
-  return null
+  // Not authenticated (either error or no session) — show login/register page
+  return <Outlet />
 }

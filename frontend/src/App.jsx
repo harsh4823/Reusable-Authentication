@@ -1,17 +1,25 @@
 import { Routes, Route } from 'react-router-dom'
 import RootLayout from './routes/layouts/RootLayout'
-import Login from './routes/login'
-import Register from './routes/register'
-import Onboard from './routes/onboard'
+import Login from './routes/Login'
+import Register from './routes/Register'
+import Onboard from './routes/Onboard'
 import Dashboard from './routes/Dashboard'
-import Profile from './routes/profile'
+import Profile from './routes/Profile'
 import NotFound from './components/NotFound'
 import AuthLayout from './routes/layouts/AuthLayout'
-import { ProtectedRoute } from './components/auth/RouteGuard';
+import { ProtectedRoute } from './components/auth/RouteGuard'
 import Index from './routes/Index'
-import OAuthSuccess from './routes/OAuthSuccess';
-import { GuestRoute } from './routes/GuestRoute';
+import OAuthSuccess from './routes/OAuthSuccess'
+import { GuestRoute } from './routes/GuestRoute'
 
+function ComingSoon({ title }) {
+  return (
+    <div className="mx-auto max-w-7xl px-6 py-8">
+      <h1 className="font-display text-2xl font-semibold">{title}</h1>
+      <p className="mt-2 text-sm text-muted-foreground">This section is under construction.</p>
+    </div>
+  )
+}
 
 function App() {
   return (
@@ -22,9 +30,10 @@ function App() {
         <Route path="/" element={<Index />} />
 
         <Route element={<GuestRoute />}>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
         </Route>
+
         <Route path="/onboard" element={<Onboard />} />
         <Route path="/oauth/success" element={<OAuthSuccess />} />
 
@@ -33,12 +42,18 @@ function App() {
           <Route element={<AuthLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
+            {/* Realm routes (sidebar links) */}
+            <Route path="/realms" element={<ComingSoon title="My Realms" />} />
+            {/* Admin routes (sidebar links) */}
+            <Route path="/admin" element={<ComingSoon title="Admin Overview" />} />
+            <Route path="/admin/realms" element={<ComingSoon title="All Realms" />} />
+            <Route path="/admin/clients" element={<ComingSoon title="All Clients" />} />
           </Route>
         </Route>
 
-        <Route path='*' element={<NotFound/>} />
+        <Route path="*" element={<NotFound />} />
 
-      </Route>  
+      </Route>
     </Routes>
   )
 }

@@ -1,5 +1,6 @@
 package com.auth.auth_app.controller;
 
+import com.auth.auth_app.Exception.ResourceNotFoundException;
 import com.auth.auth_app.entity.AuthUser;
 import com.auth.auth_app.entity.RefreshToken;
 import com.auth.auth_app.entity.Role;
@@ -14,10 +15,12 @@ import com.auth.auth_app.util.AuthUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -96,7 +99,17 @@ public class AuthUserController {
 
     @PostMapping("/logout/single")
     public ResponseEntity<?> logoutFromSingleDevice(HttpServletRequest request, HttpServletResponse response) {
-        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String email = auth.getName();
+        if (auth.getPrincipal() instanceof String) {
+            email = (String) auth.getPrincipal();
+        }
+
         AuthUser authUser = authUserRepository.findByEmail(email).orElse(null);
 
         if (authUser != null) {
@@ -105,7 +118,15 @@ public class AuthUserController {
 
             authService.logoutFromSingleDevice(authUser.getUserId(), jwt, refreshToken);
 
+
             authUtil.clearBrowserCookies(response);
+
+            HttpSession session = request.getSession(false); // Get session without creating a new one
+            if (session != null) {
+                session.invalidate();
+            }
+            SecurityContextHolder.clearContext();
+
             return ResponseEntity.status(HttpStatus.OK).body("Logout successful");
         }
 
@@ -113,13 +134,31 @@ public class AuthUserController {
     }
 
     @PostMapping("/logout/all")
-    public ResponseEntity<?> logoutFromAllDevices(HttpServletResponse response) {
-        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    public ResponseEntity<?> logoutFromAllDevices(HttpServletRequest request, HttpServletResponse response) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String email = auth.getName();
+        if (auth.getPrincipal() instanceof String) {
+            email = (String) auth.getPrincipal();
+        }
+
         AuthUser authUser = authUserRepository.findByEmail(email).orElse(null);
 
         if (authUser != null) {
             authService.logoutFromAllDevices(authUser.getUserId());
+
             authUtil.clearBrowserCookies(response);
+
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.invalidate();
+            }
+            SecurityContextHolder.clearContext();
+
             return ResponseEntity.status(HttpStatus.OK).body("Logout successful from all devices");
         }
 
@@ -139,18 +178,18 @@ public class AuthUserController {
 
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser() {
-        Object principal = SecurityContextHolder.getContext()
-                .getAuthentication()
-                .getPrincipal();
+        // Algorithm: Fail-Safe Context Extraction
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (principal == null || "anonymousUser".equals(principal)) {
+        // 1. Defensively check for null before invoking methods
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        String email = principal.toString();
+        String email = authentication.getPrincipal().toString();
 
         AuthUser authUser = authUserRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("authentication","email",email));
 
         Map<String, Object> response = new HashMap<>();
         response.put("email", authUser.getEmail());

@@ -1,10 +1,11 @@
+// frontend/src/routes/Dashboard.jsx
 import { Link } from 'react-router-dom'
 import { Building2, KeyRound, Layers, Plus, Sparkles, Users } from 'lucide-react'
 import { StatCard } from './../components/ui-extras/StatCard'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-helpers'
 import { RoleBadge } from '@/components/ui-extras/RoleBadge'
-import { PageHeader } from './../components/layout/PageHeader'
+import { PageHeader } from './../components/layout/PageHeader';
 import {
   useGetRealmQuery,
   useGetRealmUsersQuery,
@@ -17,16 +18,11 @@ const Dashboard = () => {
   const roles = user?.roles ?? []
   const isAdmin = roles.includes('ROLE_ADMIN')
   const isClient = roles.includes('ROLE_CLIENT') || isAdmin
-
-  // Backend may return `realm`, `realmName`, or `ownedRealm` — check all
-  const realmName = user?.realm ?? user?.realmName ?? user?.ownedRealm ?? null
-  const hasRealm = Boolean(realmName)
-
+  const hasRealm = Boolean(user?.realm)
   const firstName = (user?.name || '').split(' ')[0] || 'there'
-
-  // Only load realm data when we have both client role AND a realm name
-  const shouldLoadRealmData = isClient && hasRealm
-
+  const realmName = user?.realm
+  const shouldLoadRealmData = Boolean(isClient && realmName)
+  
   const { data: realm, isLoading: realmLoading } = useGetRealmQuery(realmName, {
     skip: !shouldLoadRealmData,
   })
@@ -47,16 +43,24 @@ const Dashboard = () => {
         title={`Welcome back, ${firstName}`}
         description="Here's a snapshot of your identity infrastructure."
         actions={
-          <div className="flex items-center gap-2">
-            {roles.map((r) => (
-              <RoleBadge key={r} role={r} />
-            ))}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              {roles.map((r) => (
+                <RoleBadge key={r} role={r} />
+              ))}
+            </div>
+            {/* ALGORITHM: Persistent Action Injection - Ensures creation is always accessible O(1) */}
+            <Button size="sm" asChild className="shadow-sm">
+              <Link to="/onboard">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Realm
+              </Link>
+            </Button>
           </div>
         }
       />
 
-      {/* No realm yet — prompt to create one */}
-      {!hasRealm && !isAdmin && (
+      {!isClient && !hasRealm && (
         <div className="mt-8 overflow-hidden rounded-2xl border border-border bg-card">
           <div className="grid gap-6 p-8 md:grid-cols-[1fr_auto] md:items-center">
             <div>
@@ -64,12 +68,10 @@ const Dashboard = () => {
                 <Sparkles className="h-3 w-3" />
                 Get started
               </div>
-              <h2 className="mt-3 font-display text-2xl font-semibold">
-                You haven't created a realm yet
-              </h2>
+              <h2 className="mt-3 font-display text-2xl font-semibold">You haven't created a realm yet</h2>
               <p className="mt-1.5 max-w-lg text-sm text-muted-foreground">
-                A realm is an isolated tenant for your application's users. Create one to start
-                issuing tokens and managing roles.
+                A realm is an isolated tenant for your application's users. Create one to start issuing tokens and
+                managing roles.
               </p>
             </div>
             <Button size="lg" asChild>
@@ -82,70 +84,45 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Realm stats — only shown when we have a realm */}
-      {shouldLoadRealmData && (
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            icon={Building2}
-            label="Realm"
-            value={
-              realmLoading
-                ? 'Loading…'
-                : realm?.realmName ?? realmName ?? '—'
-            }
-            trend={realm?.displayName ?? 'Your tenant'}
-          />
-          <StatCard
-            icon={Users}
-            label="Total users"
-            value={usersPage?.totalElements ?? 0}
-          />
-          <StatCard
-            icon={KeyRound}
-            label="Roles defined"
-            value={realmRoles.length}
-          />
-          <StatCard
-            icon={Layers}
-            label="OAuth2 clients"
-            value={clients.length}
-          />
-        </div>
-      )}
+      {isClient && (
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          icon={Building2}
+          label="Realm"
+          value={realmLoading ? 'Loading...' : realm?.realmName ?? realmName ?? '—'}
+          trend={realm?.displayName ?? 'Your tenant'}
+        />
+
+        <StatCard
+          icon={Users}
+          label="Total users"
+          value={usersPage?.totalElements ?? 0}
+        />
+
+        <StatCard
+          icon={KeyRound}
+          label="Roles defined"
+          value={realmRoles.length}
+        />
+
+        <StatCard
+          icon={Layers}
+          label="OAuth2 clients"
+          value={clients.length}
+        />
+      </div>
+    )}
 
       <div className="mt-8 grid gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border border-border bg-card p-6">
           <h3 className="font-display text-base font-semibold">Quick actions</h3>
           <div className="mt-4 space-y-2">
-            {isClient && hasRealm && (
-              <ActionLink
-                to="/realms"
-                icon={Building2}
-                title="My Realms"
-                subtitle="Manage tenants & users"
-              />
+            {isClient && (
+              <ActionLink to="/realms" icon={Building2} title="My Realms" subtitle="Manage tenants & users" />
             )}
-            {!hasRealm && !isAdmin && (
-              <ActionLink
-                to="/onboard"
-                icon={Plus}
-                title="Create a realm"
-                subtitle="Set up your first tenant"
-              />
-            )}
-            <ActionLink
-              to="/profile"
-              icon={Users}
-              title="Edit profile"
-              subtitle="Update your identity & sessions"
-            />
+            <ActionLink to="/profile" icon={Users} title="Edit profile" subtitle="Update your identity & sessions" />
             {isAdmin && (
-              <ActionLink
-                to="/admin"
-                icon={KeyRound}
-                title="Admin Panel"
-                subtitle="Platform-wide controls"
-              />
+              <ActionLink to="/admin" icon={KeyRound} title="Admin Panel" subtitle="Platform-wide controls" />
             )}
           </div>
         </div>

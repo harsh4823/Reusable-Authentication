@@ -11,6 +11,8 @@ import { ProtectedRoute } from './components/auth/RouteGuard'
 import Index from './routes/Index'
 import OAuthSuccess from './routes/OAuthSuccess'
 import { GuestRoute } from './routes/GuestRoute'
+import Realms from './routes/Realms'
+import RealmSettings from './routes/RealmSettings'
 
 function ComingSoon({ title }) {
   return (
@@ -43,11 +45,12 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
             {/* Realm routes (sidebar links) */}
-            <Route path="/realms" element={<ComingSoon title="My Realms" />} />
+            <Route path="/realms" element={<Realms title="My Realms" />} />
             {/* Admin routes (sidebar links) */}
             <Route path="/admin" element={<ComingSoon title="Admin Overview" />} />
             <Route path="/admin/realms" element={<ComingSoon title="All Realms" />} />
             <Route path="/admin/clients" element={<ComingSoon title="All Clients" />} />
+            <Route path="/realms/:realmName/settings" element={<RealmSettings/>} />
           </Route>
         </Route>
 

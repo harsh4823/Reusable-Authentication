@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { PasswordInput } from './../components/ui-extras/PasswordInput'
 import { loginSchema } from '@/lib/validators'        
-import { useLoginMutation } from '@/store/api/auth-api'
+import { useLoginMutation, authApi } from '@/store/api/auth-api'
 import { useAppDispatch } from '@/store/hooks'
 import { setCredentials } from '@/store/auth-slice'
 import { useAuth, rootRedirectFor } from '@/lib/auth-helpers'
@@ -33,36 +33,45 @@ const Login = () => {
   if (isAuthenticated) return <Navigate to={rootRedirectFor(user?.roles ?? [])} replace />
 
   const onSubmit = async (values) => {
-  try {
-    await axiosInstance.post('/auth/session-login', {
-      email: values.email,
-      password: values.password,
-    })
+    try {
+      // 1. Establish the Session Bridge
+      await axiosInstance.post('/auth/session-login', {
+        email: values.email,
+        password: values.password,
+      })
 
-    if (continueUrl) {
-      window.location.replace(decodeURIComponent(continueUrl))
-      return
+      if (continueUrl) {
+        window.location.replace(decodeURIComponent(continueUrl))
+        return
+      }
+
+      // 2. Fetch the JWT
+      const res = await login({
+        email: values.email,
+        password: values.password,
+      }).unwrap()
+
+      dispatch(setCredentials({
+        accessToken: res.accessToken,
+        refreshToken: res.refreshToken,
+        user: res.user,
+      }))
+
+      dispatch(authApi.util.resetApiState());
+      navigate(rootRedirectFor(res.user.roles ?? []))
+
+    } catch (err) {
+      // Expose the raw backend error for debugging
+      const errorStatus = err.response?.status || err.status;
+      console.error("RAW BACKEND ERROR:", err);
+
+      form.setError('password', {
+        message: errorStatus === 403 
+          ? 'Security/CSRF Error. Check backend logs.' 
+          : 'Invalid email or password',
+      })
     }
-
-    // normal dashboard login fallback
-    const res = await login({
-      email: values.email,
-      password: values.password,
-    }).unwrap()
-
-    dispatch(setCredentials({
-      accessToken: res.accessToken,
-      refreshToken: res.refreshToken,
-      user: res.user,
-    }))
-
-    navigate(rootRedirectFor(res.user.roles ?? []))
-  } catch (err) {
-    form.setError('password', {
-      message: 'Invalid email or password',
-    })
   }
-}
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-4">

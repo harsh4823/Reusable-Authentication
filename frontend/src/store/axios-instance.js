@@ -10,6 +10,9 @@ export const GOOGLE_OAUTH_URL =
 export const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
+  withXSRFToken: true, // Forces Axios to attach the CSRF header on cross-origin requests
 })
 
 const TOKEN_KEY = 'accessToken'
@@ -47,7 +50,6 @@ export function clearStoredAuth() {
   }
 }
 
-// Request interceptor — attach Bearer token
 axiosInstance.interceptors.request.use((config) => {
   const { accessToken } = getStoredTokens()
   if (accessToken) {

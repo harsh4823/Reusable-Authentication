@@ -41,14 +41,42 @@ public class AuthUserController {
     private final TokenRepository tokenRepository;
     private final AuthUserRepository authUserRepository;
 
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponse> apiLogin(@RequestBody LoginRequest loginRequest){
-        try{
-        LoginResponse loginResponse = authService.authenticateAndGenerateToken(loginRequest);
+    // frontend/src/main/java/com/auth/auth_app/controller/AuthUserController.java
 
-        return ResponseEntity.status(HttpStatus.OK).header("Authorization",loginResponse.accessToken())
-                .body(loginResponse);
-        }catch (Exception e){
+    @PostMapping("/login")
+    public ResponseEntity<?> apiLogin(@RequestBody LoginRequest loginRequest){
+        try {
+            // 1. Authenticate and get standard tokens from your service
+            LoginResponse loginResponse = authService.authenticateAndGenerateToken(loginRequest);
+
+            // 2. Fetch the authenticated user to satisfy the React frontend contract
+            AuthUser authUser = authUserRepository.findByEmail(loginRequest.email())
+                    .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+
+            // 3. Construct the user object exactly as the frontend expects it
+            Map<String, Object> userMap = new HashMap<>();
+            userMap.put("email", authUser.getEmail());
+            userMap.put("name", authUser.getName());
+            userMap.put("roles", authUser.getRoles()
+                    .stream()
+                    .map(Role::getName)
+                    .toList());
+            userMap.put("realm", authUser.getMemberRealm() != null
+                    ? authUser.getMemberRealm().getRealmName()
+                    : "master");
+
+            // 4. Construct the final hybrid response payload
+            // ALGORITHM: Data Serialization Mapping
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("status", loginResponse.status());
+            responseBody.put("accessToken", loginResponse.accessToken());
+            responseBody.put("refreshToken", loginResponse.refreshToken());
+            responseBody.put("user", userMap); // This strictly prevents the React TypeError
+
+            return ResponseEntity.status(HttpStatus.OK)
+                    .header("Authorization", loginResponse.accessToken())
+                    .body(responseBody);
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }

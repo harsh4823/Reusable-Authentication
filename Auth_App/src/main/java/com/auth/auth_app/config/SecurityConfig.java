@@ -33,6 +33,8 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity httpSecurity) throws Exception {
         CsrfTokenRequestAttributeHandler csrfTokenRequestAttributeHandler = new CsrfTokenRequestAttributeHandler();
+        CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        csrfTokenRepository.setCookiePath("/");
         return httpSecurity
                 .authorizeHttpRequests(req -> req
                         .requestMatchers(
@@ -42,7 +44,7 @@ public class SecurityConfig {
                                 "/auth/register",
                                 "/auth/refresh",
                                 "/auth/certs",
-                                "/onboard",
+                                "/onboard/**",
                                 "/*/.well-known/openid-configuration",
                                 "/*/protocol/openid-connect/certs",
                                 "/*/protocol/openid-connect/token/introspect",
@@ -52,6 +54,7 @@ public class SecurityConfig {
                         )
                         .permitAll()
                         .requestMatchers(HttpMethod.POST,"/admin/realms").authenticated()
+                        .requestMatchers(HttpMethod.GET,"/admin/realms").hasAnyRole("CLIENT","ADMIN")
                         .requestMatchers("/admin/realms/**").hasAnyRole("ADMIN","CLIENT")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
@@ -81,6 +84,7 @@ public class SecurityConfig {
                         .ignoringRequestMatchers(
                                 "/login",
                                 "/auth/login",
+                                "/auth/session-login",
                                 "/auth/register",
                                 "/auth/refresh",
                                 "/auth/logout/single",
@@ -91,7 +95,7 @@ public class SecurityConfig {
                                 "/*/protocol/openid-connect/register",
                                 "/*/protocol/openid-connect/token/introspect",
                                 "/*/protocol/openid-connect/userinfo"
-                        ).csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                        ).csrfTokenRepository(csrfTokenRepository))
                 .addFilterAfter(new CsrfTokenFilter(), BasicAuthenticationFilter.class)
                 .addFilterBefore(jwtTokenValidatorFilter, BasicAuthenticationFilter.class)
                 .build();

@@ -1,5 +1,6 @@
 package com.auth.auth_app.service;
 
+import com.auth.auth_app.model.RealmUserRequest;
 import com.auth.auth_app.model.RealmUserResponse;
 import com.auth.auth_app.model.RealmUserUpdateRequest;
 import org.springframework.data.domain.Page;
@@ -18,4 +19,6 @@ public interface IRealmUserService {
     RealmUserResponse assignRoleToUser(String realmName, Long userId, String roleName);
 
     RealmUserResponse removeRoleFromUser(String realmName, Long userId, String roleName);
+
+    void createRealmUser(String realmName, RealmUserRequest request);
 }

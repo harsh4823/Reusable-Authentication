@@ -14,7 +14,6 @@ import com.auth.auth_app.repository.LinkedAccountsRepository;
 import com.auth.auth_app.repository.RoleRepository;
 import com.auth.auth_app.repository.TokenRepository;
 import com.auth.auth_app.service.IAuthService;
-import com.auth.auth_app.service.ICloudinaryService;
 import com.auth.auth_app.service.IRefreshTokenService;
 import com.auth.auth_app.util.AuthUtil;
 import com.auth.auth_app.util.IOAuth2UserInfoExtractor;
@@ -30,10 +29,12 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -41,7 +42,6 @@ public class AuthServiceImp implements IAuthService {
 
     private final AuthenticationManager authenticationManager;
     private final Environment env;
-    private final ICloudinaryService cloudinaryService;
     private final PasswordEncoder passwordEncoder;
     private final AuthUserRepository authUserRepository;
     private final LinkedAccountsRepository linkedAccountsRepository;
@@ -73,18 +73,22 @@ public class AuthServiceImp implements IAuthService {
 
     @Override
     @Transactional
-    public void registerUser(AuthUserDto authUserDto, MultipartFile profilePicture) throws IOException {
-        Role userRole = roleRepository.findByNameAndRealmIsNull("ROLE_USER")
-                .orElseThrow(() -> new RuntimeException("Default role ROLE_USER not found in DB"));
+    public void registerUser(AuthUserDto authUserDto) throws IOException {
+        Role clientRole = roleRepository.findByNameAndRealmIsNull("ROLE_CLIENT")
+                .orElseThrow(() -> new RuntimeException("Default role ROLE_CLIENT not found in DB"));
+
+        AuthUser user = authUserRepository.findByEmail(authUserDto.email()).orElse(null);
+
+        if (user != null) {
+            throw new BadCredentialsException("User already exists");
+        }
 
         String hashPassword = passwordEncoder.encode(authUserDto.password());
-            Map data = cloudinaryService.upload(profilePicture);
             AuthUser authUser = AuthUser.builder()
                     .name(authUserDto.name())
                     .password(hashPassword)
                     .email(authUserDto.email())
-                    .image(data.get("url").toString())
-                    .roles(new HashSet<>(Set.of(userRole)))
+                    .roles(new HashSet<>(Set.of(clientRole)))
                     .build();
 
             authUserRepository.save(authUser);
@@ -94,12 +98,6 @@ public class AuthServiceImp implements IAuthService {
     @Override
     @Transactional
     public AuthUser registerUser(OAuth2UserInfo oAuth2UserInfo, ProviderType providerType) throws IOException {
-        String imageUrl = null;
-        if (oAuth2UserInfo.avatarUrl() != null){
-            Map data = cloudinaryService.upload(oAuth2UserInfo.avatarUrl());
-            imageUrl = data.get("url").toString();
-        }
-
         Role userRole = roleRepository.findByNameAndRealmIsNull("ROLE_USER")
                 .orElseThrow(() -> new RuntimeException("Default role ROLE_USER not found in DB"));
 
@@ -107,7 +105,6 @@ public class AuthServiceImp implements IAuthService {
                 .email(oAuth2UserInfo.email())
                 .password(null)
                 .name(oAuth2UserInfo.name())
-                .image(imageUrl)
                 .linkedAccounts(new ArrayList<>())
                 .roles(new HashSet<>(Set.of(userRole)))
                 .build();

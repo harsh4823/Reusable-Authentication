@@ -23,11 +23,9 @@ public class AuthUser {
     private Long userId;
 
     @Email
-    @Column(unique = true)
     private String email;
     private String password;
     private String name;
-    private String image;
     private boolean enabled = true;
 
     @CreatedDate

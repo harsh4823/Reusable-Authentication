@@ -4,6 +4,7 @@ import com.auth.auth_app.Exception.ResourceNotFoundException;
 import com.auth.auth_app.entity.AuthUser;
 import com.auth.auth_app.entity.Realm;
 import com.auth.auth_app.entity.Role;
+import com.auth.auth_app.model.RealmUserRequest;
 import com.auth.auth_app.model.RealmUserResponse;
 import com.auth.auth_app.model.RealmUserUpdateRequest;
 import com.auth.auth_app.repository.AuthUserRepository;
@@ -14,8 +15,11 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -26,6 +30,7 @@ public class RealmUserServiceImp implements IRealmUserService {
     private final RealmRepository realmRepository;
     private final AuthUserRepository authUserRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public Page<RealmUserResponse> getUsersInRealm(String realmName, Pageable pageable) {
@@ -102,6 +107,37 @@ public class RealmUserServiceImp implements IRealmUserService {
         return buildResponse(authUser);
     }
 
+    @Override
+    public void createRealmUser(String realmName, RealmUserRequest request) {
+        Realm realm = findRealm(realmName);
+
+        AuthUser authUser = authUserRepository.findByEmailAndMemberRealm(request.email(),realm)
+                .orElse(null);
+
+        if (authUser!=null){
+            throw new RuntimeException("User with email "+request.email()+" already exists");
+        }
+
+        Role defaultRole = roleRepository.findByNameAndRealm("ROLE_USER", realm)
+                .orElseGet(() -> {
+                    Role newRole = new Role();
+                    newRole.setName("ROLE_USER");
+                    newRole.setRealm(realm);
+                    return roleRepository.save(newRole);
+                });
+
+        AuthUser newUser = AuthUser.builder()
+                .email(request.email())
+                .name(request.name())
+                .password(passwordEncoder.encode(request.password()))
+                .memberRealm(realm)
+                .roles(new HashSet<>(List.of(defaultRole)))
+                .build();
+
+        authUserRepository.save(newUser);
+
+    }
+
     private Realm findRealm(String realmName) {
         return realmRepository.findByRealmName(realmName)
                 .orElseThrow(() -> new ResourceNotFoundException("Realm", "realmName", realmName));
@@ -121,7 +157,6 @@ public class RealmUserServiceImp implements IRealmUserService {
                 authUser.getUserId(),
                 authUser.getEmail(),
                 authUser.getName(),
-                authUser.getImage(),
                 authUser.isEnabled(),
                 roles,
                 authUser.getCreatedAt()

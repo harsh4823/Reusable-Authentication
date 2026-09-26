@@ -13,6 +13,7 @@ import com.auth.auth_app.repository.RoleRepository;
 import com.auth.auth_app.repository.TokenRepository;
 import com.auth.auth_app.service.IRealmAuthService;
 import com.auth.auth_app.service.IRefreshTokenService;
+import com.auth.auth_app.strategy.IRealmAuthStrategy;
 import com.auth.auth_app.util.AuthUtil;
 import io.jsonwebtoken.Jwts;
 import jakarta.transaction.Transactional;
@@ -22,8 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,6 +37,7 @@ public class RealmAuthServiceImp implements IRealmAuthService {
     private final AuthUtil authUtil;
     private final RoleRepository roleRepository;
     private final IRefreshTokenService refreshTokenService;
+    private final List<IRealmAuthStrategy> authStrategy;
 
     @Override
     public RealmLoginResponse login(String realmName, RealmLoginRequest request) {
@@ -81,16 +82,13 @@ public class RealmAuthServiceImp implements IRealmAuthService {
         }
 
         Role role = roleRepository.findByNameAndRealmIsNull("ROLE_USER")
-                .orElseThrow(()-> new RuntimeException("Role_USER not seeded"));
+                .orElseThrow(() -> new RuntimeException("Role_USER not seeded"));
 
-        AuthUser authUser = AuthUser.builder()
-                .email(request.email())
-                .name(request.name())
-                .password(passwordEncoder.encode(request.password()))
-                .enabled(true)
-                .memberRealm(realm)
-                .roles(new HashSet<>(Set.of(role)))
-                .build();
+        AuthUser authUser = authStrategy.stream()
+                .filter(strategy -> strategy.supports(realm.getAuthMethod()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Unsupported auth method: " + realm.getAuthMethod()))
+                .registerNewUser(request, realm, role);
 
         authUser = authUserRepository.save(authUser);
 

@@ -123,5 +123,8 @@ export const {
   useCreateRealmMutation, 
   useCreateRealmRoleMutation,
   useDeleteRealmRoleMutation,
-  useCreateRealmUserMutation
+  useCreateRealmUserMutation,
+  useAssignRoleToUserMutation,
+  useDeleteRealmUserMutation,
+  useRemoveRoleFromUserMutation
 } = realmApi

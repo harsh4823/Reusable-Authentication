@@ -12,8 +12,7 @@ public class GithubUserInfoExtractor implements IOAuth2UserInfoExtractor{
         return new OAuth2UserInfo(
                 attributes.get("id").toString(),
                 (String) attributes.get("email"),
-                (String) attributes.get("name"),
-                (String) attributes.get("avatar_url")
+                (String) attributes.get("name")
         );
     }
 

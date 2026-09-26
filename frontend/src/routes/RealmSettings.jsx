@@ -39,6 +39,7 @@ function CreateUserDialog({ realmName, children }) {
       setEmail(''); setName(''); setPassword('')
     } catch (err) {
       console.error("Failed to create user", err)
+      alert(`Backend rejected request! Status: ${err.status}. Check console for details.`);
     }
   }
 

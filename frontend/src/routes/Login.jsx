@@ -58,7 +58,7 @@ const Login = () => {
       }))
 
       dispatch(authApi.util.resetApiState());
-      navigate(rootRedirectFor(res.user.roles ?? []))
+      navigate(rootRedirectFor(res.user.roles ?? [],res.user.realm))
 
     } catch (err) {
       // Expose the raw backend error for debugging

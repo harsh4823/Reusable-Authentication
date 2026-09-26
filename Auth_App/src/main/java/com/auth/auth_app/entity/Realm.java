@@ -40,4 +40,9 @@ public class Realm {
     @CreatedDate
     private LocalDateTime createdAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private AuthMethod authMethod = AuthMethod.EMAIL_PASSWORD;
+
 }

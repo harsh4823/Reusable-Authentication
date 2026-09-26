@@ -18,12 +18,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.security.PublicKey;
 import java.util.Base64;
@@ -81,10 +79,10 @@ public class AuthUserController {
         }
     }
 
-    @PostMapping(value = "/register" , consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> register(@ModelAttribute AuthUserDto authUserDto , @RequestParam MultipartFile profilePicture){
+    @PostMapping(value = "/register")
+    public ResponseEntity<?> register(@ModelAttribute AuthUserDto authUserDto){
         try{
-            authService.registerUser(authUserDto,profilePicture);
+            authService.registerUser(authUserDto);
             return ResponseEntity.status(HttpStatus.CREATED).
                         body("Given user details are successfully registered");
         }catch (Exception e){
@@ -229,7 +227,7 @@ public class AuthUserController {
 
         response.put("realm", authUser.getMemberRealm() != null
                 ? authUser.getMemberRealm().getRealmName()
-                : "master");
+                : null);
 
         return ResponseEntity.ok(response);
     }

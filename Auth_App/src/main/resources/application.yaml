@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: Auth_App
+  profiles:
+    active: dev

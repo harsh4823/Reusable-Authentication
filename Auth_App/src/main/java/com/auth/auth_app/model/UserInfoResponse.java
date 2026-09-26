@@ -8,7 +8,6 @@ public record UserInfoResponse(
         String sub,
         String email,
         String name,
-        String picture,
         String realm,
         @JsonProperty("email_verified") boolean emailVerified
 ) {

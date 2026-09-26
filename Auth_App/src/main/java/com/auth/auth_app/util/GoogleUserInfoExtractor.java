@@ -12,8 +12,7 @@ public class GoogleUserInfoExtractor implements IOAuth2UserInfoExtractor{
         return new OAuth2UserInfo(
                 attributes.get("sub").toString(),
                 (String) attributes.get("email"),
-                (String) attributes.get("name"),
-                (String) attributes.get("picture")
+                (String) attributes.get("name")
         );
     }
 

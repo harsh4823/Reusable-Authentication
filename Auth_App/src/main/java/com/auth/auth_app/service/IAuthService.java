@@ -8,7 +8,6 @@ import com.auth.auth_app.model.LoginRequest;
 import com.auth.auth_app.model.LoginResponse;
 import com.auth.auth_app.model.OAuth2UserInfo;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
@@ -16,7 +15,7 @@ public interface IAuthService {
 
     LoginResponse authenticateAndGenerateToken(LoginRequest loginRequest);
 
-    void registerUser(AuthUserDto authUserDto, MultipartFile profilePicture) throws IOException;
+    void registerUser(AuthUserDto authUserDto) throws IOException;
 
     AuthUser registerUser(OAuth2UserInfo oAuth2UserInfo, ProviderType providerType) throws IOException;
 

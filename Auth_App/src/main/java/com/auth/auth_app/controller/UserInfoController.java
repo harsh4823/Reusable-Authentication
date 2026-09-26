@@ -64,7 +64,6 @@ public class UserInfoController {
                     email,
                     email,
                     authUser.getName(),
-                    authUser.getImage(),
                     realm,
                     true
             );
